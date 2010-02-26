@@ -1,0 +1,13 @@
+<stack>
+  <description brief="pr2_kinematics">pr2_kinematics</description>
+  <author>Maintained by Sachin Chitta</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pr2_kinematics</url>
+  <depend stack="common_msgs" /> <!-- geometry_msgs -->
+  <depend stack="geometry" /> <!-- kdl, tf_conversions, eigen, angles -->
+  <depend stack="kinematics" /> <!-- kinematics_msgs -->
+  <depend stack="robot_model" /> <!-- urdf, kdl_parser -->
+  <depend stack="ros" /> <!-- roscpp -->
+
+</stack>
