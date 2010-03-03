@@ -80,11 +80,12 @@ bool PR2ArmIK::init(urdf::Model robot_model, std::string root_name, std::string 
         continuous_joint_.push_back(true);
       }
       addJointToChainInfo(link->parent_joint,solver_info_);
-      solver_info_.link_names.push_back(link->name);
       num_joints++;
     }
     link = robot_model.getLink(link->getParent()->name);
   } 
+
+  solver_info_.link_names.push_back(tip_name);
 
   //  solver_info_.link_names.push_back(tip_name);
   // We expect order from root to tip, so reverse the order
