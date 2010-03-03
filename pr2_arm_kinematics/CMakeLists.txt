@@ -31,7 +31,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(pr2_arm_kinematics_lib
   src/pr2_arm_ik.cpp
-  src/pr2_arm_ik_utils.cpp
+  src/pr2_arm_kinematics_utils.cpp
   src/pr2_arm_ik_solver.cpp
   src/pr2_arm_kinematics.cpp
 )

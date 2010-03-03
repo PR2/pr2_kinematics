@@ -37,7 +37,7 @@
 #include <Eigen/Array>
 #include <kdl/chainiksolver.hpp>
 #include <pr2_arm_kinematics/pr2_arm_ik.h>
-#include <pr2_arm_kinematics/pr2_arm_ik_utils.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_utils.h>
 #include <kinematics_msgs/GetKinematicSolverInfo.h>
 #include <kinematics_msgs/PositionIKRequest.h>
 #include <geometry_msgs/PoseStamped.h>
