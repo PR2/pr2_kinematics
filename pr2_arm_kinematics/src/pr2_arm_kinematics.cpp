@@ -52,7 +52,7 @@ namespace pr2_arm_kinematics {
   static const std::string IK_INFO_SERVICE = "get_ik_solver_info";
   static const std::string FK_INFO_SERVICE = "get_fk_solver_info";
 
-  PR2ArmIKNode::PR2ArmIKNode():  node_handle_("~"),dimension_(7)
+  PR2ArmKinematics::PR2ArmKinematics():  node_handle_("~"),dimension_(7)
   {
     urdf::Model robot_model;
     std::string tip_name, xml_string;
@@ -72,6 +72,7 @@ namespace pr2_arm_kinematics {
     ROS_INFO("Advertising services");
     jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
     node_handle_.param<int>("free_angle",free_angle_,2);
+
     node_handle_.param<double>("search_discretization",search_discretization_,0.01);
     pr2_arm_ik_solver_.reset(new pr2_arm_kinematics::PR2ArmIKSolver(robot_model,root_name_,tip_name, search_discretization_,free_angle_));
     if(!pr2_arm_ik_solver_->active_)
@@ -81,11 +82,11 @@ namespace pr2_arm_kinematics {
     }
     else
     {
-      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmIKNode::getPositionFK,this);
-      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmIKNode::getPositionIK,this);
+      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmKinematics::getPositionFK,this);
+      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmKinematics::getPositionIK,this);
 
-      ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmIKNode::getIKSolverInfo,this);
-      fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmIKNode::getFKSolverInfo,this);
+      ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmKinematics::getIKSolverInfo,this);
+      fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmKinematics::getFKSolverInfo,this);
 
       pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
       pr2_arm_kinematics::getKDLChainInfo(kdl_chain_,fk_solver_info_);
@@ -108,14 +109,14 @@ namespace pr2_arm_kinematics {
     }
   }
 
-  bool PR2ArmIKNode::isActive()
+  bool PR2ArmKinematics::isActive()
   {
     if(active_)
       return true;
     return false;
   }
 
-  bool PR2ArmIKNode::getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
+  bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
                                    kinematics_msgs::GetPositionIK::Response &response)
   {
     if(!active_)
@@ -176,7 +177,7 @@ namespace pr2_arm_kinematics {
     }
   }
 
-  bool PR2ArmIKNode::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+  bool PR2ArmKinematics::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
                                      kinematics_msgs::GetKinematicSolverInfo::Response &response)
   {
     if(!active_)
@@ -188,7 +189,7 @@ namespace pr2_arm_kinematics {
     return true;
   }
 
-  bool PR2ArmIKNode::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+  bool PR2ArmKinematics::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
                                      kinematics_msgs::GetKinematicSolverInfo::Response &response)
   {
     if(!active_)
@@ -200,7 +201,7 @@ namespace pr2_arm_kinematics {
     return true;
   }
 
-  bool PR2ArmIKNode::getPositionFK(kinematics_msgs::GetPositionFK::Request &request, 
+  bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &request, 
                                    kinematics_msgs::GetPositionFK::Response &response)
   {
     if(!active_)

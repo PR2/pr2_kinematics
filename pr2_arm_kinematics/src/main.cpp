@@ -30,20 +30,20 @@
 /*
  * Author: Sachin Chitta
  */
-#include <pr2_arm_ik/pr2_arm_ik_node.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics.h>
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "pr2_arm_ik_node");
-  pr2_arm_kinematics::PR2ArmIKNode pr2_arm_ik_node;
+  ros::init(argc, argv, "pr2_arm_kinematics");
+  pr2_arm_kinematics::PR2ArmKinematics pr2_arm_kinematics;
 
-  if(!pr2_arm_ik_node.isActive())
+  if(!pr2_arm_kinematics.isActive())
   {
-    ROS_ERROR("pr2_arm_ik_node could not be activated");
+    ROS_ERROR("pr2_arm_kinematics could not be activated");
   }
   else
   {
-    ROS_INFO("pr2_arm_ik_node active");
+    ROS_INFO("pr2_arm_kinematics active");
     ros::spin();
   }
   return(0);

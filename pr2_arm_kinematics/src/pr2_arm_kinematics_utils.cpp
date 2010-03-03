@@ -341,8 +341,8 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
     return true;
   }
 
-  bool checkCollisionFreeIKService(kinematics_msgs::GetCollisionFreePositionIK::Request &request, 
-                      kinematics_msgs::GetCollisionFreePositionIK::Response &response,
+  bool checkConstraintAwareIKService(kinematics_msgs::GetConstraintAwarePositionIK::Request &request, 
+                      kinematics_msgs::GetConstraintAwarePositionIK::Response &response,
                       const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if(!checkLinkName(request.ik_request.ik_link_name,chain_info))

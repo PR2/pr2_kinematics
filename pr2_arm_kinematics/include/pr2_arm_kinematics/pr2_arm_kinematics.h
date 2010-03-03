@@ -57,7 +57,7 @@
 
 namespace pr2_arm_kinematics
 {
-  class PR2ArmIKNode
+  class PR2ArmKinematics
   {
     public:
 
@@ -71,9 +71,9 @@ namespace pr2_arm_kinematics
      *
      *  To use this wrapper, you must have a roscore running with a robot description available from the ROS param server. 
      */
-    PR2ArmIKNode();
+    PR2ArmKinematics();
 
-    virtual ~PR2ArmIKNode(){};
+    virtual ~PR2ArmKinematics(){};
 
     /** 
      *  @brief Specifies if the node is active or not
