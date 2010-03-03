@@ -48,7 +48,7 @@
 
 #include <kinematics_msgs/GetPositionFK.h>
 #include <kinematics_msgs/GetPositionIK.h>
-#include <kinematics_msgs/GetKinematicTreeInfo.h>
+#include <kinematics_msgs/GetKinematicSolverInfo.h>
 #include <kinematics_msgs/GetCollisionFreePositionIK.h>
 
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -86,85 +86,48 @@ namespace pr2_arm_ik
      * @param A request message. See service definition for GetPositionIK for more information on this message.
      * @param The response message. See service definition for GetPositionIK for more information on this message.
      */
-    bool ikService(kinematics_msgs::GetPositionIK::Request &request, 
+    bool getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
                    kinematics_msgs::GetPositionIK::Response &response);
 
     /**
      * @brief This is the basic kinematics info service that will return information about the kinematics node.
-     * @param A request message. See service definition for GetKinematicTreeInfo for more information on this message.
-     * @param The response message. See service definition for GetKinematicTreeInfo for more information on this message.
+     * @param A request message. See service definition for GetKinematicSolverInfo for more information on this message.
+     * @param The response message. See service definition for GetKinematicSolverInfo for more information on this message.
      */
-    bool ikQuery(kinematics_msgs::GetKinematicTreeInfo::Request &request, 
-                 kinematics_msgs::GetKinematicTreeInfo::Response &response);
+    bool getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+                         kinematics_msgs::GetKinematicSolverInfo::Response &response);
+
+    /**
+     * @brief This is the basic kinematics info service that will return information about the kinematics node.
+     * @param A request message. See service definition for GetKinematicSolverInfo for more information on this message.
+     * @param The response message. See service definition for GetKinematicSolverInfo for more information on this message.
+     */
+    bool getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+                         kinematics_msgs::GetKinematicSolverInfo::Response &response);
 
     /**
      * @brief This is the basic forward kinematics service that will return information about the kinematics node.
      * @param A request message. See service definition for GetPositionFK for more information on this message.
      * @param The response message. See service definition for GetPositionFK for more information on this message.
      */
-    bool fkService(kinematics_msgs::GetPositionFK::Request &request, 
-                   kinematics_msgs::GetPositionFK::Response &response);
+    bool getPositionFK(kinematics_msgs::GetPositionFK::Request &request, 
+                       kinematics_msgs::GetPositionFK::Response &response);
 
     protected:
 
-    urdf::Model robot_model_;
-
     bool active_;
-
     int free_angle_;
-
+    urdf::Model robot_model_;
     double search_discretization_;
-
-    double cost_multiplier_;
-
-    std::string ik_service_name_;
-
-    std::string fk_service_name_;
-
-    std::string ik_query_name_;
-
     ros::NodeHandle node_handle_, root_handle_;
-
-    ros::ServiceServer ik_service_;
-
-    ros::ServiceServer ik_collision_service_;
-
-    ros::ServiceServer ik_service_with_cost_;
-
-    ros::ServiceServer fk_service_;
-
-    ros::ServiceServer ik_query_;
-
-    ros::ServiceClient check_state_validity_client_;
-
-    ros::ServiceClient get_state_cost_client_;
-
     boost::shared_ptr<pr2_arm_ik::PR2ArmIKSolver> pr2_arm_ik_solver_;
-
+    ros::ServiceServer ik_service_,fk_service_,ik_solver_info_service_,fk_solver_info_service_;
     tf::TransformListener tf_;
-
-    std::string control_topic_name_;
-
-    KDL::Frame pose_desired_;
-
     std::string root_name_;
-
     int dimension_;
-
-    /*    bool ikServiceWithCollision(kinematics_msgs::GetCollisionFreePositionIK::Request &request, 
-                                kinematics_msgs::GetCollisionFreePositionIK::Response &response);
-
-    bool ikServiceMinimumCost(kinematics_msgs::GetCollisionFreePositionIK::Request &request, kinematics_msgs::GetCollisionFreePositionIK::Response &response);
-
-    void collisionCheck(const KDL::JntArray &jnt_array, const std::vector<std::string> &joint_names, bool &check);
-
-    void getCollisionCost(const KDL::JntArray &jnt_array, const std::vector<std::string> &joint_names, const std::vector<std::string> &link_names, bool &valid, double &cost);
-    */
     boost::shared_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver_;
-
     KDL::Chain kdl_chain_;
-
-    kinematics_msgs::KinematicTreeInfo chain_info_;
+    kinematics_msgs::KinematicSolverInfo ik_solver_info_, fk_solver_info_;
   };
 }
 

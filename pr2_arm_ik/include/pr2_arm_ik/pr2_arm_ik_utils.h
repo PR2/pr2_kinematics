@@ -50,7 +50,7 @@
 #include <kinematics_msgs/GetPositionFK.h>
 #include <kinematics_msgs/GetPositionIK.h>
 #include <kinematics_msgs/GetCollisionFreePositionIK.h>
-#include <kinematics_msgs/GetKinematicTreeInfo.h>
+#include <kinematics_msgs/GetKinematicSolverInfo.h>
 
 
 using namespace angles;
@@ -95,31 +95,31 @@ namespace pr2_arm_ik
                    KDL::Tree &kdl_chain);
 
   bool checkJointNames(const std::vector<std::string> &joint_names, 
-                       const kinematics_msgs::KinematicTreeInfo &chain_info);
+                       const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool checkLinkNames(const std::vector<std::string> &link_names,
-                      const kinematics_msgs::KinematicTreeInfo &chain_info);
+                      const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool checkLinkName(const std::string &link_name, 
-                     const kinematics_msgs::KinematicTreeInfo &chain_info);
+                     const kinematics_msgs::KinematicSolverInfo &chain_info);
  
   bool checkRobotState(motion_planning_msgs::RobotState &robot_state,
-                       const kinematics_msgs::KinematicTreeInfo &chain_info);
+                       const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool checkFKService(kinematics_msgs::GetPositionFK::Request &request, 
                       kinematics_msgs::GetPositionFK::Response &response, 
-                      const kinematics_msgs::KinematicTreeInfo &chain_info);
+                      const kinematics_msgs::KinematicSolverInfo &chain_info);
  
   bool checkIKService(kinematics_msgs::GetPositionIK::Request &request, 
                       kinematics_msgs::GetPositionIK::Response &response,
-                      const kinematics_msgs::KinematicTreeInfo &chain_info);
+                      const kinematics_msgs::KinematicSolverInfo &chain_info);
  
   bool checkCollisionFreeIKService(kinematics_msgs::GetCollisionFreePositionIK::Request &request, 
                                    kinematics_msgs::GetCollisionFreePositionIK::Response &response,
-                                   const kinematics_msgs::KinematicTreeInfo &chain_info);
+                                   const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   int getJointIndex(const std::string &name,
-                    const kinematics_msgs::KinematicTreeInfo &chain_info);
+                    const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool convertPoseToRootFrame(const geometry_msgs::PoseStamped &pose_msg, 
                               KDL::Frame &pose_kdl, 
@@ -134,7 +134,8 @@ namespace pr2_arm_ik
   int getKDLSegmentIndex(const KDL::Chain &chain, 
                          const std::string &name);
 
-
+  void getKDLChainInfo(const KDL::Chain &chain,
+                       kinematics_msgs::KinematicSolverInfo &chain_info);
 }
 
 #endif// PR2_ARM_IK_UTILS_H

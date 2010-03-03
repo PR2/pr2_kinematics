@@ -79,22 +79,22 @@ bool PR2ArmIK::init(urdf::Model robot_model, std::string root_name, std::string 
         max_angles_.push_back(M_PI);
         continuous_joint_.push_back(true);
       }
-      addJointToChainInfo(link->parent_joint,chain_info_);
-      chain_info_.link_names.push_back(link->name);
+      addJointToChainInfo(link->parent_joint,solver_info_);
+      solver_info_.link_names.push_back(link->name);
       num_joints++;
     }
     link = robot_model.getLink(link->getParent()->name);
   } 
 
-  //  chain_info_.link_names.push_back(tip_name);
+  //  solver_info_.link_names.push_back(tip_name);
   // We expect order from root to tip, so reverse the order
   std::reverse(angle_multipliers_.begin(),angle_multipliers_.end());
   std::reverse(min_angles_.begin(),min_angles_.end());
   std::reverse(max_angles_.begin(),max_angles_.end());
   std::reverse(link_offset.begin(),link_offset.end());
-  std::reverse(chain_info_.limits.begin(),chain_info_.limits.end());
-  std::reverse(chain_info_.joint_names.begin(),chain_info_.joint_names.end());
-  std::reverse(chain_info_.link_names.begin(),chain_info_.link_names.end());
+  std::reverse(solver_info_.limits.begin(),solver_info_.limits.end());
+  std::reverse(solver_info_.joint_names.begin(),solver_info_.joint_names.end());
+  std::reverse(solver_info_.link_names.begin(),solver_info_.link_names.end());
   std::reverse(continuous_joint_.begin(),continuous_joint_.end());
 
   if(num_joints != 7)
@@ -121,7 +121,7 @@ bool PR2ArmIK::init(urdf::Model robot_model, std::string root_name, std::string 
   return true;
 }
 
-void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, kinematics_msgs::KinematicTreeInfo &info)
+void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, kinematics_msgs::KinematicSolverInfo &info)
 {
   motion_planning_msgs::JointLimits limit;
   info.joint_names.push_back(joint->name);//Joints are coming in reverse order
@@ -144,9 +144,9 @@ void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, k
   info.limits.push_back(limit);
 }
 
-void PR2ArmIK::getChainInfo(kinematics_msgs::KinematicTreeInfo &info)
+void PR2ArmIK::getSolverInfo(kinematics_msgs::KinematicSolverInfo &info)
 {
-  info = chain_info_;
+  info = solver_info_;
 }
 
 

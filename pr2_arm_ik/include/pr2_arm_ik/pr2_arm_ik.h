@@ -85,18 +85,18 @@ h       @param Input pose for end-effector
        @brief get chain information about the arm. This populates the IK query response, filling in joint level information including names and joint limits. 
        @param The response structure to be filled in.
     */
-    void getChainInfo(kinematics_msgs::KinematicTreeInfo &info);
+    void getSolverInfo(kinematics_msgs::KinematicSolverInfo &info);
 
     /**
        @brief get chain information about the arm.
     */
-    kinematics_msgs::KinematicTreeInfo chain_info_;
+    kinematics_msgs::KinematicSolverInfo solver_info_;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     private:
 
-    void addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint,kinematics_msgs::KinematicTreeInfo &info);
+    void addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint,kinematics_msgs::KinematicSolverInfo &info);
 
     bool checkJointLimits(const std::vector<double> &joint_values);
  

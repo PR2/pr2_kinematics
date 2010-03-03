@@ -47,15 +47,10 @@ using namespace ros;
 
 namespace pr2_arm_ik {
 
-/// the string used internally to access control starting service; this should be remaped in the launch file
-//  static const std::string COLLISION_CHECK_SERVICE = "get_state_validity";
-//  static const std::string GET_STATE_COST_SERVICE = "get_state_cost";
-
-//  static const std::string IK_WITH_COLLISION_SERVICE = "get_collision_free_ik";
-//  static const std::string IK_WITH_COST_SERVICE = "get_minimum_cost_ik";
   static const std::string IK_SERVICE = "get_ik";
   static const std::string FK_SERVICE = "get_fk";
-  static const std::string QUERY_SERVICE = "get_kinematic_tree_info";
+  static const std::string IK_INFO_SERVICE = "get_ik_solver_info";
+  static const std::string FK_INFO_SERVICE = "get_fk_solver_info";
 
   PR2ArmIKNode::PR2ArmIKNode():  node_handle_("~"),dimension_(7)
   {
@@ -74,16 +69,7 @@ namespace pr2_arm_ik {
       active_ = false;
       ROS_ERROR("Could not load kdl tree");
     }
-
-
-    node_handle_.param<double>("cost_multiplier",cost_multiplier_,1.0e8);
     ROS_INFO("Advertising services");
-    //    ik_collision_service_ = root_handle_.advertiseService(IK_WITH_COLLISION_SERVICE,&PR2ArmIKNode::ikServiceWithCollision,this);
-    //    ik_service_with_cost_ = root_handle_.advertiseService(IK_WITH_COST_SERVICE,&PR2ArmIKNode::ikServiceMinimumCost,this);
-
-    //    check_state_validity_client_ = root_handle_.serviceClient<planning_environment_msgs::GetStateValidity>(COLLISION_CHECK_SERVICE);
-    //    get_state_cost_client_ = root_handle_.serviceClient<planning_environment_msgs::GetStateCost>(GET_STATE_COST_SERVICE);
-    
     jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
     node_handle_.param<int>("free_angle",free_angle_,2);
     node_handle_.param<double>("search_discretization",search_discretization_,0.01);
@@ -95,19 +81,29 @@ namespace pr2_arm_ik {
     }
     else
     {
-      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmIKNode::fkService,this);
-      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmIKNode::ikService,this);
-      ik_query_ = node_handle_.advertiseService(QUERY_SERVICE,&PR2ArmIKNode::ikQuery,this);
-      pr2_arm_ik_solver_->getChainInfo(chain_info_);
-      for(unsigned int i=0; i < chain_info_.joint_names.size(); i++)
+      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmIKNode::getPositionFK,this);
+      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmIKNode::getPositionIK,this);
+
+      ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmIKNode::getIKSolverInfo,this);
+      fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmIKNode::getFKSolverInfo,this);
+
+      pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
+      pr2_arm_ik::getKDLChainInfo(kdl_chain_,fk_solver_info_);
+      fk_solver_info_.joint_names = ik_solver_info_.joint_names;
+
+      for(unsigned int i=0; i < ik_solver_info_.joint_names.size(); i++)
       {
-        ROS_INFO("pr2_arm_ik:: joint name: %s",chain_info_.joint_names[i].c_str());
+        ROS_INFO("PR2Kinematics:: joint name: %s",ik_solver_info_.joint_names[i].c_str());
       }
-      for(unsigned int i=0; i < chain_info_.link_names.size(); i++)
+      for(unsigned int i=0; i < ik_solver_info_.link_names.size(); i++)
       {
-        ROS_INFO("pr2_arm_ik:: link name: %s",chain_info_.link_names[i].c_str());
+        ROS_INFO("PR2Kinematics can solve IK for %s",ik_solver_info_.link_names[i].c_str());
       }
-      ROS_INFO("pr2_arm_ik:: active");
+      for(unsigned int i=0; i < fk_solver_info_.link_names.size(); i++)
+      {
+        ROS_INFO("PR2Kinematics can solve FK for %s",fk_solver_info_.link_names[i].c_str());
+      }
+      ROS_INFO("PR2Kinematics::active");
       active_ = true;
     }
   }
@@ -119,8 +115,8 @@ namespace pr2_arm_ik {
     return false;
   }
 
-  bool PR2ArmIKNode::ikService(kinematics_msgs::GetPositionIK::Request &request, 
-                               kinematics_msgs::GetPositionIK::Response &response)
+  bool PR2ArmIKNode::getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
+                                   kinematics_msgs::GetPositionIK::Response &response)
   {
     if(!active_)
     {
@@ -128,11 +124,12 @@ namespace pr2_arm_ik {
       return true;
     }
 
-    if(!checkIKService(request,response,chain_info_))
+    if(!checkIKService(request,response,ik_solver_info_))
       return true;
 
     geometry_msgs::PoseStamped pose_msg_in = request.ik_request.pose_stamped;
-    if(!convertPoseToRootFrame(pose_msg_in,pose_desired_,root_name_,tf_))
+    KDL::Frame pose_desired;
+    if(!convertPoseToRootFrame(pose_msg_in,pose_desired,root_name_,tf_))
     {
       response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
       return true;
@@ -144,7 +141,7 @@ namespace pr2_arm_ik {
     jnt_pos_in.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-      int tmp_index = getJointIndex(request.ik_request.ik_seed_state.joint_state.name[i],chain_info_);
+      int tmp_index = getJointIndex(request.ik_request.ik_seed_state.joint_state.name[i],ik_solver_info_);
       if(tmp_index >=0)
       {
         jnt_pos_in(tmp_index) = request.ik_request.ik_seed_state.joint_state.position[i];
@@ -155,68 +152,14 @@ namespace pr2_arm_ik {
       }
     }
 
-    bool ik_valid = (pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,pose_desired_,jnt_pos_out,request.timeout.toSec()) >= 0);
+    bool ik_valid = (pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                         pose_desired,
+                                                         jnt_pos_out,
+                                                         request.timeout.toSec(),response.error_code) >= 0);
 
     if(ik_valid)
     {
-      response.solution.joint_state.name = chain_info_.joint_names;
-      response.solution.joint_state.position.resize(dimension_);
-      for(int i=0; i < dimension_; i++)
-      {
-        response.solution.joint_state.position[i] = jnt_pos_out(i);
-        ROS_DEBUG("IK Solution: %s %d: %f",response.solution.joint_state.name[i].c_str(),i,jnt_pos_out(i));
-      }
-      response.error_code.val = response.error_code.SUCCESS;
-      return true;
-    }
-    else
-    {
-      response.error_code.val = response.error_code.NO_IK_SOLUTION;
-      ROS_DEBUG("An IK solution could not be found");   
-      return true;
-    }
-  }
-/*
-  bool PR2ArmIKNode::ikServiceWithCollision(kinematics_msgs::GetCollisionFreePositionIK::Request &request, kinematics_msgs::GetCollisionFreePositionIK::Response &response)
-  {
-    if(!active_)
-      return false;
-
-    if(!checkCollisionFreeIKService(request,response,chain_info_))
-      return false;
-
-    if(!ros::service::exists(COLLISION_CHECK_SERVICE,true))
-    {
-      ROS_ERROR("Could not find collision checking service: %s",COLLISION_CHECK_SERVICE.c_str());
-      response.error_code.val = response.error_code.COLLISION_CHECKING_UNAVAILABLE;
-      return false;
-    }
-
-    geometry_msgs::PoseStamped pose_msg_in = request.ik_request.pose_stamped;
-    if(!convertPoseToRootFrame(pose_msg_in,pose_desired_,root_name_,tf_))
-    {
-      response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
-      return false;
-    }
-    //Do the IK
-    KDL::JntArray jnt_pos_in;
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_in.resize(dimension_);
-    for(int i=0; i < dimension_; i++)
-    {
-      int tmp_index = getJointIndex(request.ik_request.ik_seed_state.joint_state.name[i],chain_info_);
-      if(tmp_index >=0)
-        jnt_pos_in(tmp_index) = request.ik_request.ik_seed_state.joint_state.position[i];
-    }
-
-    bool ik_valid = (pr2_arm_ik_solver_->CartToJntSearchWithCollision(jnt_pos_in,
-                                                                      pose_desired_,
-                                                                      jnt_pos_out,
-                                                                      request.timeout.toSec(),chain_info_.joint_names,
-                                                                      boost::bind(&PR2ArmIKNode::collisionCheck, this, _1, _2, _3)) >= 0);
-    if(ik_valid)
-    {
-      response.solution.joint_state.name = chain_info_.joint_names;
+      response.solution.joint_state.name = ik_solver_info_.joint_names;
       response.solution.joint_state.position.resize(dimension_);
       for(int i=0; i < dimension_; i++)
       {
@@ -229,152 +172,36 @@ namespace pr2_arm_ik {
     else
     {
       ROS_DEBUG("An IK solution could not be found");   
-      response.error_code.val = response.error_code.NO_IK_SOLUTION;
-      return false;
-    }
-  }
-*/
-
-/*  bool PR2ArmIKNode::ikServiceMinimumCost(kinematics_msgs::GetCollisionFreePositionIK::Request &request, kinematics_msgs::GetCollisionFreePositionIK::Response &response)
-  {
-    if(!active_)
-      return false;
-
-    if(!checkCollisionFreeIKService(request,response,chain_info_))
-      return false;
-
-    if(!ros::service::exists(GET_STATE_COST_SERVICE,true))
-    {
-      ROS_ERROR("Could not find collision cost service: %s",GET_STATE_COST_SERVICE.c_str());
-      response.error_code.val = response.error_code.COLLISION_CHECKING_UNAVAILABLE;
-      return false;
-    }
-    geometry_msgs::PoseStamped pose_msg_in = request.ik_request.pose_stamped;
-    if(!convertPoseToRootFrame(pose_msg_in,pose_desired_,root_name_,tf_))
-    {
-      response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
-      return false;
-    }
-
-    //Do the IK
-    KDL::JntArray jnt_pos_in;
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_in.resize(dimension_);
-    for(int i=0; i < dimension_; i++)
-    {
-      int tmp_index = getJointIndex(request.ik_request.ik_seed_state.joint_state.name[i],chain_info_);
-      if(tmp_index >=0)
-        jnt_pos_in(tmp_index) = request.ik_request.ik_seed_state.joint_state.position[i];
-    }
-
-    bool ik_valid = (pr2_arm_ik_solver_->CartToJntSearchMinimumCost(jnt_pos_in,
-                                                                    pose_desired_,
-                                                                    jnt_pos_out,
-                                                                    10,
-                                                                    chain_info_.joint_names,
-                                                                    chain_info_.link_names,
-                                                                    boost::bind(&PR2ArmIKNode::getCollisionCost, this, _1, _2, _3, _4, _5)) >= 0);
-
-
-    if(ik_valid)
-    {
-      response.solution.joint_state.name = chain_info_.joint_names;
-      response.solution.joint_state.position.resize(dimension_);
-      for(int i=0; i < dimension_; i++)
-      {
-        response.solution.joint_state.position[i] = jnt_pos_out(i);
-        ROS_DEBUG("IK Solution: %s %d: %f",response.solution.joint_state.name[i].c_str(),i,jnt_pos_out(i));
-      }
-      response.error_code.val = response.error_code.SUCCESS;
       return true;
     }
-    else
-    {
-      ROS_DEBUG("An IK solution could not be found");   
-      response.error_code.val = response.error_code.NO_IK_SOLUTION;
-      return false;
-    }
   }
 
-  void PR2ArmIKNode::collisionCheck(const KDL::JntArray &jnt_array, const std::vector<string> &joint_names, bool &check)
-  {
-    planning_environment_msgs::GetStateValidity::Request req;
-    planning_environment_msgs::GetStateValidity::Response res;
-    req.robot_state.joint_state.header.stamp = ros::Time::now();
-    req.robot_state.joint_state.position.resize(7);
-    req.robot_state.joint_state.name = joint_names;
-    for(int i = 0; i < 7; i++)
-    {
-      req.robot_state.joint_state.position[i] = jnt_array(i);
-    }
-
-    req.flag = planning_environment_msgs::GetStateValidity::Request::COLLISION_TEST;
-
-    if(check_state_validity_client_.call(req,res))
-    {
-      ROS_DEBUG("Service call to check state validity succeeded");
-      check = res.error_code.val;
-      if(check == res.error_code.SUCCESS)
-        ROS_INFO("IK succeeded");
-      return;
-    }
-    else
-    {
-      check = false;
-      ROS_ERROR("Service call to check state validity failed");
-      return;
-    }
-  }
-
-  void PR2ArmIKNode::getCollisionCost(const KDL::JntArray &jnt_array, 
-                                      const std::vector<std::string> &joint_names, 
-                                      const std::vector<std::string> &link_names, 
-                                      bool &valid, 
-                                      double &cost)
-  {
-    planning_environment_msgs::GetStateCost::Request req;
-    planning_environment_msgs::GetStateCost::Response res;
-    req.robot_state.joint_state.header.stamp = ros::Time::now();
-    req.robot_state.joint_state.position.resize(7);
-    req.robot_state.joint_state.name = joint_names;
-    for(int i = 0; i < 7; i++)
-    {
-      req.robot_state.joint_state.position[i] = jnt_array(i);
-    }
-    req.link_names = link_names;
-    if(get_state_cost_client_.call(req,res))
-    {
-      ROS_DEBUG("Service call to find cost succeeded");
-      std::vector<double> tmp;
-      tmp = res.costs;
-      for(unsigned int i =0; i < tmp.size(); i++)
-        tmp[i] *= cost_multiplier_;
-      cost = std::accumulate(tmp.begin(),tmp.end(),0);
-      valid = res.valid;
-      return;
-    }
-    else
-    {
-      valid = false;
-      ROS_ERROR("Service call to check plan validity failed");
-      return;
-    }
-  }
-*/
-  bool PR2ArmIKNode::ikQuery(kinematics_msgs::GetKinematicTreeInfo::Request &request, 
-                             kinematics_msgs::GetKinematicTreeInfo::Response &response)
+  bool PR2ArmIKNode::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+                                     kinematics_msgs::GetKinematicSolverInfo::Response &response)
   {
     if(!active_)
     {
       ROS_ERROR("IK node not active");
       return true;
     }
-    pr2_arm_ik_solver_->getChainInfo(response.kinematic_tree_info);
+    response.kinematic_solver_info = ik_solver_info_;
     return true;
   }
 
-  bool PR2ArmIKNode::fkService(kinematics_msgs::GetPositionFK::Request &request, 
-                               kinematics_msgs::GetPositionFK::Response &response)
+  bool PR2ArmIKNode::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+                                     kinematics_msgs::GetKinematicSolverInfo::Response &response)
+  {
+    if(!active_)
+    {
+      ROS_ERROR("IK node not active");
+      return true;
+    }
+    response.kinematic_solver_info = fk_solver_info_;
+    return true;
+  }
+
+  bool PR2ArmIKNode::getPositionFK(kinematics_msgs::GetPositionFK::Request &request, 
+                                   kinematics_msgs::GetPositionFK::Response &response)
   {
     if(!active_)
     {
@@ -382,7 +209,7 @@ namespace pr2_arm_ik {
       return true;
     }
 
-    if(!checkFKService(request,response,chain_info_))
+    if(!checkFKService(request,response,fk_solver_info_))
       return true;
 
     KDL::Frame p_out;
@@ -393,7 +220,7 @@ namespace pr2_arm_ik {
     jnt_pos_in.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-      int tmp_index = getJointIndex(request.robot_state.joint_state.name[i],chain_info_);
+      int tmp_index = getJointIndex(request.robot_state.joint_state.name[i],fk_solver_info_);
       if(tmp_index >=0)
         jnt_pos_in(tmp_index) = request.robot_state.joint_state.position[i];
     }
@@ -435,12 +262,3 @@ namespace pr2_arm_ik {
     return true;
   }
 } // namespace
-
-/*int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "pr2_arm_ik_node");
-  pr2_arm_ik::PR2ArmIKNode pr2_arm_ik_node;
-  ros::spin();
-  return(0);
-}
-*/

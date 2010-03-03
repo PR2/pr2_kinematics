@@ -35,26 +35,29 @@
 using namespace Eigen;
 using namespace pr2_arm_ik;
 
-PR2ArmIKSolver::PR2ArmIKSolver(urdf::Model robot_model, 
-                               std::string root_frame_name,
-                               std::string tip_frame_name,
-                               double search_discretization_angle, 
-                               int free_angle):ChainIkSolverPos()
+PR2ArmIKSolver::PR2ArmIKSolver(const urdf::Model &robot_model, 
+                               const std::string &root_frame_name,
+                               const std::string &tip_frame_name,
+                               const double &search_discretization_angle, 
+                               const int &free_angle):ChainIkSolverPos()
 {
   search_discretization_angle_ = search_discretization_angle;
   free_angle_ = free_angle;
+  root_frame_name_ = root_frame_name_;
   if(!pr2_arm_ik_.init(robot_model,root_frame_name,tip_frame_name))
     active_ = false;
   else
     active_ = true;
 }
 
-void PR2ArmIKSolver::getChainInfo(kinematics_msgs::KinematicTreeInfo &response)
+void PR2ArmIKSolver::getSolverInfo(kinematics_msgs::KinematicSolverInfo &response)
 {
-  pr2_arm_ik_.getChainInfo(response);
+  pr2_arm_ik_.getSolverInfo(response);
 }
 
-int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, KDL::JntArray &q_out)
+int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, 
+                              const KDL::Frame& p_in, 
+                              KDL::JntArray &q_out)
 {
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
   if(free_angle_ == 0)
@@ -105,7 +108,9 @@ int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_i
     return -1;
 }
 
-int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out)
+int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, 
+                              const KDL::Frame& p_in, 
+                              std::vector<KDL::JntArray> &q_out)
 {
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
   KDL::JntArray q;
@@ -135,7 +140,9 @@ int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_i
   return 1;
 }
 
-bool PR2ArmIKSolver::getCount(int &count, int max_count, int min_count)
+bool PR2ArmIKSolver::getCount(int &count, 
+                              const int &max_count, 
+                              const int &min_count)
 {
   if(count > 0)
   {
@@ -171,7 +178,11 @@ bool PR2ArmIKSolver::getCount(int &count, int max_count, int min_count)
   }
 }
 
-int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, std::vector<KDL::JntArray> &q_out, const double &timeout)
+int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
+                                    const KDL::Frame& p_in, 
+                                    std::vector<KDL::JntArray> &q_out, 
+                                    const double &timeout,
+                                    motion_planning_msgs::ArmNavigationErrorCodes &error_code)
 {
   KDL::JntArray q_init = q_in;
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
@@ -181,9 +192,9 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame&
   double loop_time = 0;
   int count = 0;
 
-  int num_positive_increments = (int)((pr2_arm_ik_.chain_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
-  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.chain_info_.limits[free_angle_].min_position)/search_discretization_angle_);
-  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.chain_info_.limits[free_angle_].max_position,pr2_arm_ik_.chain_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
+  int num_positive_increments = (int)((pr2_arm_ik_.solver_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
+  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.solver_info_.limits[free_angle_].min_position)/search_discretization_angle_);
+  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.solver_info_.limits[free_angle_].max_position,pr2_arm_ik_.solver_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
   while(loop_time < timeout)
   {
     if(CartToJnt(q_init,p_in,q_out) > 0)
@@ -194,10 +205,24 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame&
     ROS_DEBUG("%d, %f",count,q_init(free_angle_));
     loop_time = (ros::Time::now()-start_time).toSec();
   }
+  if(loop_time >= timeout)
+  {
+    ROS_DEBUG("IK Timed out in %f seconds",timeout);
+    error_code.val = error_code.TIMED_OUT;
+  }
+  else
+  {
+    ROS_DEBUG("No IK solution was found");
+    error_code.val = error_code.NO_IK_SOLUTION;
+  }
   return -1;
 }
 
-int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame& p_in, KDL::JntArray &q_out, const double &timeout)
+int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
+                                    const KDL::Frame& p_in, 
+                                    KDL::JntArray &q_out, 
+                                    const double &timeout,
+                                    motion_planning_msgs::ArmNavigationErrorCodes &error_code)
 {
   KDL::JntArray q_init = q_in;
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
@@ -207,9 +232,9 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame&
   double loop_time = 0;
   int count = 0;
 
-  int num_positive_increments = (int)((pr2_arm_ik_.chain_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
-  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.chain_info_.limits[free_angle_].min_position)/search_discretization_angle_);
-  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.chain_info_.limits[free_angle_].max_position,pr2_arm_ik_.chain_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
+  int num_positive_increments = (int)((pr2_arm_ik_.solver_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
+  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.solver_info_.limits[free_angle_].min_position)/search_discretization_angle_);
+  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.solver_info_.limits[free_angle_].max_position,pr2_arm_ik_.solver_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
   while(loop_time < timeout)
   {
     if(CartToJnt(q_init,p_in,q_out) > 0)
@@ -220,48 +245,41 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, const KDL::Frame&
     ROS_DEBUG("%d, %f",count,q_init(free_angle_));
     loop_time = (ros::Time::now()-start_time).toSec();
   }
+  if(loop_time >= timeout)
+  {
+    ROS_DEBUG("IK Timed out in %f seconds",timeout);
+    error_code.val = error_code.TIMED_OUT;
+  }
+  else
+  {
+    ROS_DEBUG("No IK solution was found");
+    error_code.val = error_code.NO_IK_SOLUTION;
+  }
   return -1;
 }
 
-int PR2ArmIKSolver::CartToJntSearchWithCallbacks(const kinematics_msgs::PositionIKRequest &ik_request, 
-                                                 const motion_planning_msgs::OrderedCollisionOperations &collision_operations,
-                                                 const motion_planning_msgs::RobotState &robot_state,
-                                                 const double &timeout,
-                                                 KDL::JntArray &q_out, 
-                                                 motion_planning_msgs::ArmNavigationErrorCodes &error_code,
-                                                 const boost::function<void(const kinematics_msgs::PositionIKRequest&, 
-                                                                            const motion_planning_msgs::OrderedCollisionOperations &collision_operations,
-                                                                            const motion_planning_msgs::RobotState &, motion_planning_msgs::ArmNavigationErrorCodes &error_code)> &desired_pose_callback,
-                                                 const boost::function<void(const KDL::JntArray&, 
-                                                                            const motion_planning_msgs::OrderedCollisionOperations &collision_operations,
-                                                                            const motion_planning_msgs::RobotState &, motion_planning_msgs::ArmNavigationErrorCodes &error_code)> &solution_callback)
+int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
+                                    const KDL::Frame& p_in, 
+                                    KDL::JntArray &q_out, 
+                                    const double &timeout, 
+                                    motion_planning_msgs::ArmNavigationErrorCodes &error_code,
+                                    const boost::function<void(const KDL::JntArray&,const KDL::Frame&,motion_planning_msgs::ArmNavigationErrorCodes &)> &desired_pose_callback,
+                                    const boost::function<void(const KDL::JntArray&,const KDL::Frame&,motion_planning_msgs::ArmNavigationErrorCodes &)> &solution_callback)
 {
-  geometry_msgs::PoseStamped pose_stamped_in = ik_request.pose_stamped;
-  KDL::JntArray q_init;
-  q_init.resize(pr2_arm_ik_.chain_info_.joint_names.size());
- 
-  for(unsigned int i=0; i < pr2_arm_ik_.chain_info_.joint_names.size(); i++)
-  {
-    int tmp_index = getJointIndex(ik_request.ik_seed_state.joint_state.name[i],pr2_arm_ik_.chain_info_);
-    if(tmp_index >=0)
-      q_init(tmp_index) = ik_request.ik_seed_state.joint_state.position[i];
-  }
-
-  KDL::Frame p_in;
-  tf::PoseMsgToKDL(pose_stamped_in.pose, p_in);
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  KDL::JntArray q_init = q_in;
   double initial_guess = q_init(free_angle_);
 
   ros::Time start_time = ros::Time::now();
   double loop_time = 0;
   int count = 0;
 
-  int num_positive_increments = (int)((pr2_arm_ik_.chain_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
-  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.chain_info_.limits[free_angle_].min_position)/search_discretization_angle_);
-  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.chain_info_.limits[free_angle_].max_position,pr2_arm_ik_.chain_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
+  int num_positive_increments = (int)((pr2_arm_ik_.solver_info_.limits[free_angle_].max_position-initial_guess)/search_discretization_angle_);
+  int num_negative_increments = (int)((initial_guess-pr2_arm_ik_.solver_info_.limits[free_angle_].min_position)/search_discretization_angle_);
+  ROS_DEBUG("%f %f %f %d %d \n\n",initial_guess,pr2_arm_ik_.solver_info_.limits[free_angle_].max_position,pr2_arm_ik_.solver_info_.limits[free_angle_].min_position,num_positive_increments,num_negative_increments);
 
   if(!desired_pose_callback.empty())
-    desired_pose_callback(ik_request,collision_operations,robot_state,error_code);
+    desired_pose_callback(q_init,p_in,error_code);
   if(error_code.val != error_code.SUCCESS)
   {
     return -1;
@@ -276,7 +294,7 @@ int PR2ArmIKSolver::CartToJntSearchWithCallbacks(const kinematics_msgs::Position
     {
       if(callback_check)
       {
-        solution_callback(q_out,collision_operations,robot_state,error_code);
+        solution_callback(q_out,p_in,error_code);
         if(error_code.val == error_code.SUCCESS)
         {
           return 1;
@@ -298,15 +316,19 @@ int PR2ArmIKSolver::CartToJntSearchWithCallbacks(const kinematics_msgs::Position
     loop_time = (ros::Time::now()-start_time).toSec();
   }
   if(loop_time >= timeout)
-    {
-      ROS_DEBUG("IK Timed out in %f seconds",timeout);
-      error_code.val = error_code.TIMED_OUT;
-    }
+  {
+    ROS_DEBUG("IK Timed out in %f seconds",timeout);
+    error_code.val = error_code.TIMED_OUT;
+  }
   else
-    {
-      ROS_DEBUG("No IK solution was found");
-      error_code.val = error_code.NO_IK_SOLUTION;
-    }
+  {
+    ROS_DEBUG("No IK solution was found");
+    error_code.val = error_code.NO_IK_SOLUTION;
+  }
   return -1;
 }
 
+std::string PR2ArmIKSolver::getFrameId()
+{
+  return root_frame_name_;
+}

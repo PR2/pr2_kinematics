@@ -238,7 +238,7 @@ namespace pr2_arm_ik
 
 
 bool checkJointNames(const std::vector<std::string> &joint_names,
-                       const kinematics_msgs::KinematicTreeInfo &chain_info)
+                       const kinematics_msgs::KinematicSolverInfo &chain_info)
   {    
     for(unsigned int i=0; i < chain_info.joint_names.size(); i++)
     {
@@ -261,7 +261,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
   }
 
   bool checkLinkNames(const std::vector<std::string> &link_names,
-                      const kinematics_msgs::KinematicTreeInfo &chain_info)
+                      const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if(link_names.empty())
       return false;
@@ -274,7 +274,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
   }
 
   bool checkLinkName(const std::string &link_name,
-                   const kinematics_msgs::KinematicTreeInfo &chain_info)
+                   const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     for(unsigned int i=0; i < chain_info.link_names.size(); i++)
     {
@@ -285,7 +285,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
   }
 
   bool checkRobotState(motion_planning_msgs::RobotState &robot_state,
-                     const kinematics_msgs::KinematicTreeInfo &chain_info)
+                     const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if((int) robot_state.joint_state.position.size() != (int) robot_state.joint_state.name.size())
     {
@@ -302,7 +302,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
   bool checkFKService(kinematics_msgs::GetPositionFK::Request &request, 
                       kinematics_msgs::GetPositionFK::Response &response, 
-                      const kinematics_msgs::KinematicTreeInfo &chain_info)
+                      const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if(!checkLinkNames(request.fk_link_names,chain_info))
     {
@@ -320,7 +320,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
   bool checkIKService(kinematics_msgs::GetPositionIK::Request &request, 
                       kinematics_msgs::GetPositionIK::Response &response,
-                      const kinematics_msgs::KinematicTreeInfo &chain_info)
+                      const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if(!checkLinkName(request.ik_request.ik_link_name,chain_info))
     {
@@ -343,7 +343,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
   bool checkCollisionFreeIKService(kinematics_msgs::GetCollisionFreePositionIK::Request &request, 
                       kinematics_msgs::GetCollisionFreePositionIK::Response &response,
-                      const kinematics_msgs::KinematicTreeInfo &chain_info)
+                      const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if(!checkLinkName(request.ik_request.ik_link_name,chain_info))
     {
@@ -420,7 +420,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
 
   int getJointIndex(const std::string &name,
-                  const kinematics_msgs::KinematicTreeInfo &chain_info)
+                  const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     for(unsigned int i=0; i < chain_info.joint_names.size(); i++)
     {
@@ -432,8 +432,19 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
     return -1;
   }
 
+  void getKDLChainInfo(const KDL::Chain &chain,
+                       kinematics_msgs::KinematicSolverInfo &chain_info)
+  {
+    int i=0; // segment number
+    while(i < (int)chain.getNrOfSegments())
+    {
+      chain_info.link_names.push_back(chain.getSegment(i).getName());
+      i++;
+    }
+  }
+
   int getKDLSegmentIndex(const KDL::Chain &chain, 
-                                    const std::string &name)
+                         const std::string &name)
   {
     int i=0; // segment number
     while(i < (int)chain.getNrOfSegments())
