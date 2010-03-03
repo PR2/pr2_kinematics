@@ -30,7 +30,7 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#include <pr2_arm_ik/pr2_arm_ik_solver.h>
+#include <pr2_arm_kinematics/pr2_arm_ik_solver.h>
 
 using namespace Eigen;
 using namespace pr2_arm_kinematics;

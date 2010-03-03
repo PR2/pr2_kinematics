@@ -30,8 +30,8 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
-#include <pr2_arm_ik/pr2_arm_ik_utils.h>
-#include <pr2_arm_ik/pr2_arm_ik_constants.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_utils.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_constants.h>
 
 namespace pr2_arm_kinematics
 {

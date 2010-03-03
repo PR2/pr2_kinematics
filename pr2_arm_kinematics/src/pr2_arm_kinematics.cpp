@@ -31,7 +31,7 @@
  * Author: Sachin Chitta
  */
 
-#include <pr2_arm_ik/pr2_arm_ik_node.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <tf_conversions/tf_kdl.h>

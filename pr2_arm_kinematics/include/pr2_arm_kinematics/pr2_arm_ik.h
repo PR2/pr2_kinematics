@@ -37,8 +37,8 @@
 #include <Eigen/Array>
 #include <Eigen/LU>// provides LU decomposition
 #include <kdl/chainiksolver.hpp>
-#include <pr2_arm_ik/pr2_arm_ik_utils.h>
-#include <pr2_arm_ik/pr2_arm_ik_constants.h>
+#include <pr2_arm_kinematics/pr2_arm_ik_utils.h>
+#include <pr2_arm_kinematics/pr2_arm_ik_constants.h>
 
 
 namespace pr2_arm_kinematics

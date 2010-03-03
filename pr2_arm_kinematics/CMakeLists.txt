@@ -29,15 +29,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(pr2_arm_ik 
+rosbuild_add_library(pr2_arm_kinematics_lib
   src/pr2_arm_ik.cpp
   src/pr2_arm_ik_utils.cpp
   src/pr2_arm_ik_solver.cpp
-  src/pr2_arm_ik_node.cpp
+  src/pr2_arm_kinematics.cpp
 )
 
-rosbuild_add_executable(pr2_arm_ik_node src/main.cpp)
-target_link_libraries(pr2_arm_ik_node pr2_arm_ik)
+rosbuild_add_executable(pr2_arm_kinematics_node src/main.cpp)
+target_link_libraries(pr2_arm_kinematics_node pr2_arm_kinematics_lib)
 
 #rosbuild_add_executable(ik_with_cost_test test/test_ik_with_cost.cpp)
 #target_link_libraries(ik_with_cost_test pr2_arm_ik)

@@ -43,7 +43,7 @@
 #include <tf/transform_listener.h>
 
 #include <angles/angles.h>
-#include <pr2_arm_ik/pr2_arm_ik_solver.h>
+#include <pr2_arm_kinematics/pr2_arm_ik_solver.h>
 #include <tf_conversions/tf_kdl.h>
 
 #include <kinematics_msgs/GetPositionFK.h>
