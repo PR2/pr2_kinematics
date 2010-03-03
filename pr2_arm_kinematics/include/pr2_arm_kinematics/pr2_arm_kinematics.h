@@ -49,7 +49,7 @@
 #include <kinematics_msgs/GetPositionFK.h>
 #include <kinematics_msgs/GetPositionIK.h>
 #include <kinematics_msgs/GetKinematicSolverInfo.h>
-#include <kinematics_msgs/GetCollisionFreePositionIK.h>
+#include <motion_planning_msgs/ArmNavigationErrorCodes.h>
 
 #include <kdl/chainfksolverpos_recursive.hpp>
 
