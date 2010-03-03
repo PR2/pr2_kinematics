@@ -33,7 +33,7 @@
 #include <pr2_arm_ik/pr2_arm_ik_utils.h>
 #include <pr2_arm_ik/pr2_arm_ik_constants.h>
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
   static const double IK_DEFAULT_TIMEOUT = 10.0;
   bool loadRobotModel(ros::NodeHandle node_handle, urdf::Model &robot_model, std::string &root_name, std::string &tip_name, std::string &xml_string)

@@ -41,81 +41,81 @@
 #include <pr2_arm_ik/pr2_arm_ik_constants.h>
 
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
-  class PR2ArmIK
-  {
-    public:
+class PR2ArmIK
+{
+public:
     
-    /** @class
-     *  @brief Inverse kinematics for the PR2 arm.
-     *  @author Sachin Chitta <sachinc@willowgarage.com>
-     *
-     */
-    PR2ArmIK();    
-    ~PR2ArmIK(){};
+  /** @class
+   *  @brief Inverse kinematics for the PR2 arm.
+   *  @author Sachin Chitta <sachinc@willowgarage.com>
+   *
+   */
+  PR2ArmIK();    
+  ~PR2ArmIK(){};
 
-    /** 
-	@brief Initialize the solver by providing a urdf::Model and a root and tip name.
-	@param A urdf::Model representation of the PR2 robot model
-	@param The root joint name of the arm 
-	@param The tip joint name of the arm
-	@return true if initialization was successful, false otherwise.
-    */
-    bool init(urdf::Model robot_model, std::string root_name, std::string tip_name);
+  /** 
+      @brief Initialize the solver by providing a urdf::Model and a root and tip name.
+      @param A urdf::Model representation of the PR2 robot model
+      @param The root joint name of the arm 
+      @param The tip joint name of the arm
+      @return true if initialization was successful, false otherwise.
+  */
+  bool init(const urdf::Model &robot_model, const std::string &root_name, const std::string &tip_name);
 
-    /**
-       @brief compute IK based on an initial guess for the shoulder pan angle.
-       @param Input pose for end-effector
-       @param Initial guess for shoulder pan angle
-     */
-    void computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &shoulder_pan_initial_guess);
+  /**
+     @brief compute IK based on an initial guess for the shoulder pan angle.
+     @param Input pose for end-effector
+     @param Initial guess for shoulder pan angle
+  */
+  void computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &shoulder_pan_initial_guess);
 
-    /**
-       @brief compute IK based on an initial guess for the shoulder roll angle.
-h       @param Input pose for end-effector
-       @param Initial guess for shoulder roll angle
-     */
-    void computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &shoulder_roll_initial_guess);
+  /**
+     @brief compute IK based on an initial guess for the shoulder roll angle.
+     h       @param Input pose for end-effector
+     @param Initial guess for shoulder roll angle
+  */
+  void computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &shoulder_roll_initial_guess);
 
     
-    std::vector<std::vector<double> > solution_ik_;/// a vector of ik solutions
+  std::vector<std::vector<double> > solution_ik_;/// a vector of ik solutions
 
-    /**
-       @brief get chain information about the arm. This populates the IK query response, filling in joint level information including names and joint limits. 
-       @param The response structure to be filled in.
-    */
-    void getSolverInfo(kinematics_msgs::KinematicSolverInfo &info);
+  /**
+     @brief get chain information about the arm. This populates the IK query response, filling in joint level information including names and joint limits. 
+     @param The response structure to be filled in.
+  */
+  void getSolverInfo(kinematics_msgs::KinematicSolverInfo &info);
 
-    /**
-       @brief get chain information about the arm.
-    */
-    kinematics_msgs::KinematicSolverInfo solver_info_;
+  /**
+     @brief get chain information about the arm.
+  */
+  kinematics_msgs::KinematicSolverInfo solver_info_;
 
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    private:
+  private:
 
-    void addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint,kinematics_msgs::KinematicSolverInfo &info);
+  void addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint,kinematics_msgs::KinematicSolverInfo &info);
 
-    bool checkJointLimits(const std::vector<double> &joint_values);
+  bool checkJointLimits(const std::vector<double> &joint_values);
  
-    bool checkJointLimits(const double &joint_value, const int &joint_num);
+  bool checkJointLimits(const double &joint_value, const int &joint_num);
 
-    Eigen::Matrix4f grhs_, gf_, home_inv_, home_;
+  Eigen::Matrix4f grhs_, gf_, home_inv_, home_;
 
-    std::vector<double> angle_multipliers_;
+  std::vector<double> angle_multipliers_;
 
-    std::vector<double> solution_;
+  std::vector<double> solution_;
 
-    double shoulder_upperarm_offset_, upperarm_elbow_offset_, elbow_wrist_offset_, shoulder_wrist_offset_, shoulder_elbow_offset_, torso_shoulder_offset_x_, torso_shoulder_offset_y_, torso_shoulder_offset_z_;
+  double shoulder_upperarm_offset_, upperarm_elbow_offset_, elbow_wrist_offset_, shoulder_wrist_offset_, shoulder_elbow_offset_, torso_shoulder_offset_x_, torso_shoulder_offset_y_, torso_shoulder_offset_z_;
 
-    std::vector<double> min_angles_;
+  std::vector<double> min_angles_;
 
-    std::vector<double> max_angles_;
+  std::vector<double> max_angles_;
 
-    std::vector<bool> continuous_joint_;
+  std::vector<bool> continuous_joint_;
 
-  };
+};
 }
 #endif// PR2_ARM_IK_H

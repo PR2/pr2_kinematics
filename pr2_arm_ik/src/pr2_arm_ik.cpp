@@ -43,13 +43,13 @@
       th7 = wrist roll 
 *****/
 using namespace angles;
-using namespace pr2_arm_ik;
+using namespace pr2_arm_kinematics;
 
 PR2ArmIK::PR2ArmIK()
 {
 }
 
-bool PR2ArmIK::init(urdf::Model robot_model, std::string root_name, std::string tip_name)
+bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name, const std::string &tip_name)
 {
   std::vector<urdf::Pose> link_offset;
   int num_joints = 0;

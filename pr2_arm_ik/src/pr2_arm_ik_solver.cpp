@@ -33,7 +33,7 @@
 #include <pr2_arm_ik/pr2_arm_ik_solver.h>
 
 using namespace Eigen;
-using namespace pr2_arm_ik;
+using namespace pr2_arm_kinematics;
 
 PR2ArmIKSolver::PR2ArmIKSolver(const urdf::Model &robot_model, 
                                const std::string &root_frame_name,

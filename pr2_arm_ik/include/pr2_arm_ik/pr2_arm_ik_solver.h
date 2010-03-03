@@ -43,7 +43,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <tf_conversions/tf_kdl.h>
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
   class PR2ArmIKSolver : public KDL::ChainIkSolverPos
   {

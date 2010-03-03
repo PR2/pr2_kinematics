@@ -55,7 +55,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
   class PR2ArmIKNode
   {
@@ -120,7 +120,7 @@ namespace pr2_arm_ik
     urdf::Model robot_model_;
     double search_discretization_;
     ros::NodeHandle node_handle_, root_handle_;
-    boost::shared_ptr<pr2_arm_ik::PR2ArmIKSolver> pr2_arm_ik_solver_;
+    boost::shared_ptr<pr2_arm_kinematics::PR2ArmIKSolver> pr2_arm_ik_solver_;
     ros::ServiceServer ik_service_,fk_service_,ik_solver_info_service_,fk_solver_info_service_;
     tf::TransformListener tf_;
     std::string root_name_;

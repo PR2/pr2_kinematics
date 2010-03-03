@@ -55,7 +55,7 @@
 
 using namespace angles;
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
   Eigen::Matrix4f KDLToEigenMatrix(const KDL::Frame &p);
 

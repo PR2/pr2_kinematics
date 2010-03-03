@@ -33,7 +33,7 @@
 #ifndef PR2_ARM_IK_CONSTANTS_H
 #define PR2_ARM_IK_CONSTANTS_H
 
-namespace pr2_arm_ik
+namespace pr2_arm_kinematics
 {
   static const int NUM_JOINTS_ARM7DOF = 7;
 

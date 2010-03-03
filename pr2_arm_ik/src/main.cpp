@@ -35,7 +35,7 @@
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "pr2_arm_ik_node");
-  pr2_arm_ik::PR2ArmIKNode pr2_arm_ik_node;
+  pr2_arm_kinematics::PR2ArmIKNode pr2_arm_ik_node;
 
   if(!pr2_arm_ik_node.isActive())
   {

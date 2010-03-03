@@ -45,7 +45,7 @@ using namespace tf;
 using namespace std;
 using namespace ros;
 
-namespace pr2_arm_ik {
+namespace pr2_arm_kinematics {
 
   static const std::string IK_SERVICE = "get_ik";
   static const std::string FK_SERVICE = "get_fk";
@@ -73,7 +73,7 @@ namespace pr2_arm_ik {
     jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
     node_handle_.param<int>("free_angle",free_angle_,2);
     node_handle_.param<double>("search_discretization",search_discretization_,0.01);
-    pr2_arm_ik_solver_.reset(new pr2_arm_ik::PR2ArmIKSolver(robot_model,root_name_,tip_name, search_discretization_,free_angle_));
+    pr2_arm_ik_solver_.reset(new pr2_arm_kinematics::PR2ArmIKSolver(robot_model,root_name_,tip_name, search_discretization_,free_angle_));
     if(!pr2_arm_ik_solver_->active_)
     {
       ROS_ERROR("Could not load ik");
@@ -88,7 +88,7 @@ namespace pr2_arm_ik {
       fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmIKNode::getFKSolverInfo,this);
 
       pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
-      pr2_arm_ik::getKDLChainInfo(kdl_chain_,fk_solver_info_);
+      pr2_arm_kinematics::getKDLChainInfo(kdl_chain_,fk_solver_info_);
       fk_solver_info_.joint_names = ik_solver_info_.joint_names;
 
       for(unsigned int i=0; i < ik_solver_info_.joint_names.size(); i++)
@@ -231,9 +231,9 @@ namespace pr2_arm_ik {
     bool valid = true;
     for(unsigned int i=0; i < request.fk_link_names.size(); i++)
     {
-      ROS_DEBUG("End effector index: %d",pr2_arm_ik::getKDLSegmentIndex(kdl_chain_,request.fk_link_names[i]));
+      ROS_DEBUG("End effector index: %d",pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,request.fk_link_names[i]));
       ROS_DEBUG("Chain indices: %d",kdl_chain_.getNrOfSegments());
-      if(jnt_to_pose_solver_->JntToCart(jnt_pos_in,p_out,pr2_arm_ik::getKDLSegmentIndex(kdl_chain_,request.fk_link_names[i])) >=0)
+      if(jnt_to_pose_solver_->JntToCart(jnt_pos_in,p_out,pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,request.fk_link_names[i])) >=0)
       {
         tf_pose.frame_id_ = root_name_;
         tf_pose.stamp_ = ros::Time();
