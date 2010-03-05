@@ -45,6 +45,10 @@
 
 namespace pr2_arm_kinematics
 {
+
+static const int NO_IK_SOLUTION = -1;
+static const int TIMED_OUT = -2;
+
   class PR2ArmIKSolver : public KDL::ChainIkSolverPos
   {
     public:
@@ -119,8 +123,7 @@ namespace pr2_arm_kinematics
     int CartToJntSearch(const KDL::JntArray& q_in, 
                         const KDL::Frame& p_in, 
                         std::vector<KDL::JntArray> &q_out, 
-                        const double &timeout,
-                        motion_planning_msgs::ArmNavigationErrorCodes& error_code);
+                        const double &timeout);
 
      /**
      * @brief This method searches for and returns the closest solution to the initial guess in the first set of solutions it finds. 
@@ -135,8 +138,7 @@ namespace pr2_arm_kinematics
     int CartToJntSearch(const KDL::JntArray& q_in, 
                         const KDL::Frame& p_in, 
                         KDL::JntArray &q_out, 
-                        const double &timeout, 
-                        motion_planning_msgs::ArmNavigationErrorCodes&);
+                        const double &timeout);
     /**
        @brief A method to get chain information about the serial chain that the IK operates on 
        @param response This class gets populated with information about the joints that IK operates on, including joint names and limits.

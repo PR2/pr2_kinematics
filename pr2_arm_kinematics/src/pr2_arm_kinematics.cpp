@@ -153,12 +153,16 @@ namespace pr2_arm_kinematics {
       }
     }
 
-    bool ik_valid = (pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
-                                                         pose_desired,
-                                                         jnt_pos_out,
-                                                         request.timeout.toSec(),response.error_code) >= 0);
+    int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                       pose_desired,
+                                                       jnt_pos_out,
+                                                       request.timeout.toSec());
+    if(ik_valid == pr2_arm_kinematics::TIMED_OUT)
+       response.error_code.val = response.error_code.TIMED_OUT;
+    if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+       response.error_code.val = response.error_code.NO_IK_SOLUTION;
 
-    if(ik_valid)
+    if(ik_valid >= 0)
     {
       response.solution.joint_state.name = ik_solver_info_.joint_names;
       response.solution.joint_state.position.resize(dimension_);

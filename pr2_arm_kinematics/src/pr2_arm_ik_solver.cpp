@@ -181,8 +181,7 @@ bool PR2ArmIKSolver::getCount(int &count,
 int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
                                     const KDL::Frame& p_in, 
                                     std::vector<KDL::JntArray> &q_out, 
-                                    const double &timeout,
-                                    motion_planning_msgs::ArmNavigationErrorCodes &error_code)
+                                    const double &timeout)
 {
   KDL::JntArray q_init = q_in;
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
@@ -208,21 +207,20 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in,
   if(loop_time >= timeout)
   {
     ROS_DEBUG("IK Timed out in %f seconds",timeout);
-    error_code.val = error_code.TIMED_OUT;
+    return TIMED_OUT;
   }
   else
   {
     ROS_DEBUG("No IK solution was found");
-    error_code.val = error_code.NO_IK_SOLUTION;
+    return NO_IK_SOLUTION;
   }
-  return -1;
+  return NO_IK_SOLUTION;
 }
 
 int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
                                     const KDL::Frame& p_in, 
                                     KDL::JntArray &q_out, 
-                                    const double &timeout,
-                                    motion_planning_msgs::ArmNavigationErrorCodes &error_code)
+                                    const double &timeout)
 {
   KDL::JntArray q_init = q_in;
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
@@ -248,14 +246,14 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in,
   if(loop_time >= timeout)
   {
     ROS_DEBUG("IK Timed out in %f seconds",timeout);
-    error_code.val = error_code.TIMED_OUT;
+    return TIMED_OUT;
   }
   else
   {
     ROS_DEBUG("No IK solution was found");
-    error_code.val = error_code.NO_IK_SOLUTION;
+    return NO_IK_SOLUTION;
   }
-  return -1;
+  return NO_IK_SOLUTION;
 }
 
 int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in, 
