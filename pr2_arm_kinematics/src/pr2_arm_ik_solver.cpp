@@ -43,7 +43,7 @@ PR2ArmIKSolver::PR2ArmIKSolver(const urdf::Model &robot_model,
 {
   search_discretization_angle_ = search_discretization_angle;
   free_angle_ = free_angle;
-  root_frame_name_ = root_frame_name_;
+  root_frame_name_ = root_frame_name;
   if(!pr2_arm_ik_.init(robot_model,root_frame_name,tip_frame_name))
     active_ = false;
   else
