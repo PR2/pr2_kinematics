@@ -4,7 +4,7 @@
   </description>
   <author>Sachin Chitta</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="ROS API reviewed" notes=""/>
   <url>http://ros.org/wiki/pr2_arm_kinematics</url>
   <depend package="roscpp"/>
   <depend package="kdl"/>
