@@ -1,5 +1,5 @@
 <stack>
-  <description brief="pr2_kinematics">pr2_kinematics</description>
+  <description brief="pr2_kinematics">This stack contains an implementation of kinematics for the PR2 robot.</description>
   <author>Maintained by Sachin Chitta</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
