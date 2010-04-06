@@ -602,7 +602,7 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 
             solution_[0] = normalize_angle(t1*angle_multipliers_[0]);
             solution_[1] = normalize_angle(t2*angle_multipliers_[1]);
-            solution_[2] = normalize_angle(t3*angle_multipliers_[2]);
+            solution_[2] = t3*angle_multipliers_[2];
             solution_[3] = normalize_angle(t4*angle_multipliers_[3]);
             solution_[4] = normalize_angle(t5*angle_multipliers_[4]);
             solution_[5] = normalize_angle(t6*angle_multipliers_[5]);
