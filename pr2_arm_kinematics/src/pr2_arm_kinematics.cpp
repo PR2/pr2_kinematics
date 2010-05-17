@@ -82,11 +82,6 @@ namespace pr2_arm_kinematics {
     }
     else
     {
-      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmKinematics::getPositionFK,this);
-      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmKinematics::getPositionIK,this);
-
-      ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmKinematics::getIKSolverInfo,this);
-      fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmKinematics::getFKSolverInfo,this);
 
       pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
       pr2_arm_kinematics::getKDLChainInfo(kdl_chain_,fk_solver_info_);
@@ -106,6 +101,12 @@ namespace pr2_arm_kinematics {
       }
       ROS_INFO("PR2Kinematics::active");
       active_ = true;
+      fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmKinematics::getPositionFK,this);
+      ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmKinematics::getPositionIK,this);
+
+      ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmKinematics::getIKSolverInfo,this);
+      fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmKinematics::getFKSolverInfo,this);
+
     }
   }
 
