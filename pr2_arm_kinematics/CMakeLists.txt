@@ -34,6 +34,7 @@ rosbuild_add_library(pr2_arm_kinematics_lib
   src/pr2_arm_kinematics_utils.cpp
   src/pr2_arm_ik_solver.cpp
   src/pr2_arm_kinematics.cpp
+  src/pr2_arm_kinematics_plugin.cpp
 )
 
 rosbuild_add_executable(pr2_arm_kinematics_node src/main.cpp)

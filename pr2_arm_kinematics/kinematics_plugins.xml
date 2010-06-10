@@ -1,0 +1,9 @@
+<library path="lib/libpr2_arm_kinematics_lib">
+  <class name="PR2ArmKinematics" type="pr2_arm_kinematics::PR2ArmKinematics" base_class_type="kinematics::KinematicsBase">
+    <description>
+      A implementation of kinematics for the PR2 arm.
+    </description>
+  </class>
+</library>
+
+
