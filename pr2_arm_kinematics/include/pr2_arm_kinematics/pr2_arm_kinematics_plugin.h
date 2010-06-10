@@ -97,7 +97,20 @@ class PR2ArmKinematicsPlugin : public kinematics::KinematicsBase
                           const std::vector<double> &ik_seed_state,
                           const double &timeout,
                           std::vector<double> &solution);      
-    
+    /**
+     * @brief Given a desired pose of the end-effector, search for the joint angles required to reach it.
+     * This particular method is intended for "searching" for a solutions by stepping through the redundancy
+     * (or other numerical routines).
+     * @param ik_pose the desired pose of the link
+     * @param ik_seed_state an initial guess solution for the inverse kinematics
+     * @return True if a valid solution was found, false otherwise
+     */
+    bool searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                          const std::vector<double> &ik_seed_state,
+                          const double &timeout,
+                          std::vector<double> &solution,
+                          const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
+                          const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback);    
     /**
      * @brief Given a set of joint angles and a set of links, compute their pose
      * @param request  - the request contains the joint angles, set of links for which poses are to be computed and a timeout
@@ -150,6 +163,18 @@ class PR2ArmKinematicsPlugin : public kinematics::KinematicsBase
     boost::shared_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver_;
     KDL::Chain kdl_chain_;
     kinematics_msgs::KinematicSolverInfo ik_solver_info_, fk_solver_info_;
+
+    boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> desiredPoseCallback_;
+    boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> solutionCallback_;    
+    void desiredPoseCallback(const KDL::JntArray& jnt_array, 
+                             const KDL::Frame& ik_pose,
+                             motion_planning_msgs::ArmNavigationErrorCodes& error_code);
+
+    void jointSolutionCallback(const KDL::JntArray& jnt_array, 
+                               const KDL::Frame& ik_pose,
+                               motion_planning_msgs::ArmNavigationErrorCodes& error_code);
+
+
   };
 }
 

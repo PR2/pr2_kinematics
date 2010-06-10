@@ -202,6 +202,100 @@ namespace pr2_arm_kinematics {
     }
   }
 
+void PR2ArmKinematicsPlugin::desiredPoseCallback(const KDL::JntArray& jnt_array, 
+                                                 const KDL::Frame& ik_pose,
+                                                 motion_planning_msgs::ArmNavigationErrorCodes& error_code)
+{
+  std::vector<double> ik_seed_state;
+  ik_seed_state.resize(dimension_);
+  int int_error_code;
+  for(int i=0; i < dimension_; i++)
+    ik_seed_state[i] = jnt_array(i);
+
+  geometry_msgs::Pose ik_pose_msg;
+  tf::PoseKDLToMsg(ik_pose,ik_pose_msg);
+
+  desiredPoseCallback_(ik_pose_msg,ik_seed_state,int_error_code);
+  if(int_error_code)
+    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::SUCCESS;
+  else
+    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
+}
+
+
+void PR2ArmKinematicsPlugin::jointSolutionCallback(const KDL::JntArray& jnt_array, 
+                                                   const KDL::Frame& ik_pose,
+                                                   motion_planning_msgs::ArmNavigationErrorCodes& error_code)
+{
+  std::vector<double> ik_seed_state;
+  ik_seed_state.resize(dimension_);
+  int int_error_code;
+  for(int i=0; i < dimension_; i++)
+    ik_seed_state[i] = jnt_array(i);
+
+  geometry_msgs::Pose ik_pose_msg;
+  tf::PoseKDLToMsg(ik_pose,ik_pose_msg);
+
+  solutionCallback_(ik_pose_msg,ik_seed_state,int_error_code);
+  if(int_error_code > 0)
+    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::SUCCESS;
+  else
+    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
+}
+
+  bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                                                const std::vector<double> &ik_seed_state,
+                                                const double &timeout,
+                                                std::vector<double> &solution,
+                                                const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
+                                                const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback)  
+  {
+    if(!active_)
+    {
+      ROS_ERROR("kinematics not active");
+      return false;
+    }
+    KDL::Frame pose_desired;
+    tf::PoseMsgToKDL(ik_pose, pose_desired);
+
+    desiredPoseCallback_ = desired_pose_callback;
+    solutionCallback_    = solution_callback;
+
+    //Do the IK
+    KDL::JntArray jnt_pos_in;
+    KDL::JntArray jnt_pos_out;
+    jnt_pos_in.resize(dimension_);
+    for(int i=0; i < dimension_; i++)
+    {
+        jnt_pos_in(i) = ik_seed_state[i];
+    }
+
+    motion_planning_msgs::ArmNavigationErrorCodes error_code;
+    int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                       pose_desired,
+                                                       jnt_pos_out,
+                                                       timeout,
+                                                       error_code,
+                                                       boost::bind(&PR2ArmKinematicsPlugin::desiredPoseCallback, this, _1, _2, _3),
+                                                       boost::bind(&PR2ArmKinematicsPlugin::jointSolutionCallback, this, _1, _2, _3));
+    if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+       return false;
+
+    if(ik_valid >= 0)
+    {
+      solution.resize(dimension_);
+      for(int i=0; i < dimension_; i++)
+      {
+        solution[i] = jnt_pos_out(i);
+      }
+      return true;
+    }
+    else
+    {
+      ROS_DEBUG("An IK solution could not be found");   
+      return false;
+    }
+  }
 
   bool PR2ArmKinematicsPlugin::getPositionFK(const std::vector<std::string> &link_names,
                                              const std::vector<double> &joint_angles,
