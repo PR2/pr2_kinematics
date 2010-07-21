@@ -151,10 +151,10 @@ void PR2ArmIK::getSolverInfo(kinematics_msgs::KinematicSolverInfo &info)
 }
 
 
-void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t1_in)
+void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t1_in, std::vector<std::vector<double> > &solution)
 {
 //t1 = shoulder/turret pan is specified
-  solution_ik_.clear();
+//  solution_ik_.resize(0);
 
   Eigen::Matrix4f g = g_in;
 //First bring everything into the arm frame
@@ -358,7 +358,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
             solution_[4] = normalize_angle(t5)*angle_multipliers_[4];
             solution_[5] = normalize_angle(t6)*angle_multipliers_[5];
             solution_[6] = normalize_angle(t7)*angle_multipliers_[6];
-            solution_ik_.push_back(solution_);
+            solution.push_back(solution_);
 
 #ifdef DEBUG
             std::cout << "SOLN " << solution_[0] << " " << solution_[1] << " " <<  solution_[2] << " " << solution_[3] <<  " " << solution_[4] << " " << solution_[5] <<  " " << solution_[6] << std::endl << std::endl;
@@ -371,9 +371,17 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 }
 
 
-void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &t3)
+void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &t3, std::vector<std::vector<double> > &solution)
 {
-  solution_ik_.clear();
+  //  ROS_INFO(" ");
+  // solution_ik_.clear();
+  //  ROS_INFO("Solution IK size: %d",solution_ik_.size());
+  //  for(unsigned int i=0; i < solution_ik_.size(); i++)
+  //  {
+  //    solution_ik_[i].clear();
+  //  }
+  //  if(!solution_ik_.empty())
+  //    solution_ik_.resize(0);
 //t3 = shoulder/turret roll is specified
   Eigen::Matrix4f g = g_in;
 //First bring everything into the arm frame
@@ -607,7 +615,7 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
             solution_[4] = normalize_angle(t5*angle_multipliers_[4]);
             solution_[5] = normalize_angle(t6*angle_multipliers_[5]);
             solution_[6] = normalize_angle(t7*angle_multipliers_[6]);
-            solution_ik_.push_back(solution_);
+            solution.push_back(solution_);
 #ifdef DEBUG
             std::cout << "SOLN " << solution_[0] << " " << solution_[1] << " " <<  solution_[2] << " " << solution_[3] <<  " " << solution_[4] << " " << solution_[5] <<  " " << solution_[6] << std::endl << std::endl;
 #endif

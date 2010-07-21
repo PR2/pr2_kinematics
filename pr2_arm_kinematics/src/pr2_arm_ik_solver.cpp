@@ -60,34 +60,35 @@ int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init,
                               KDL::JntArray &q_out)
 {
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  std::vector<std::vector<double> > solution_ik;
   if(free_angle_ == 0)
   {
     ROS_DEBUG("Solving with %f",q_init(0)); 
-    pr2_arm_ik_.computeIKShoulderPan(b,q_init(0));
+    pr2_arm_ik_.computeIKShoulderPan(b,q_init(0),solution_ik);
   }
   else
   {
-    pr2_arm_ik_.computeIKShoulderRoll(b,q_init(2));
+    pr2_arm_ik_.computeIKShoulderRoll(b,q_init(2),solution_ik);
   }
   
-  if(pr2_arm_ik_.solution_ik_.empty())
+  if(solution_ik.empty())
     return -1;
 
   double min_distance = 1e6;
   int min_index = -1;
 
-  for(int i=0; i< (int) pr2_arm_ik_.solution_ik_.size(); i++)
+  for(int i=0; i< (int) solution_ik.size(); i++)
   {     
-    ROS_DEBUG("Solution : %d",(int)pr2_arm_ik_.solution_ik_.size());
+    ROS_DEBUG("Solution : %d",(int)solution_ik.size());
 
-    for(int j=0; j < (int)pr2_arm_ik_.solution_ik_[i].size(); j++)
+    for(int j=0; j < (int)solution_ik[i].size(); j++)
     {   
-      ROS_DEBUG("%d: %f",j,pr2_arm_ik_.solution_ik_[i][j]);
+      ROS_DEBUG("%d: %f",j,solution_ik[i][j]);
     }
     ROS_DEBUG(" ");
     ROS_DEBUG(" ");
 
-    double tmp_distance = computeEuclideanDistance(pr2_arm_ik_.solution_ik_[i],q_init);
+    double tmp_distance = computeEuclideanDistance(solution_ik[i],q_init);
     if(tmp_distance < min_distance)
     {
       min_distance = tmp_distance;
@@ -97,10 +98,10 @@ int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init,
 
   if(min_index > -1)
   {
-    q_out.resize((int)pr2_arm_ik_.solution_ik_[min_index].size());
-    for(int i=0; i < (int)pr2_arm_ik_.solution_ik_[min_index].size(); i++)
+    q_out.resize((int)solution_ik[min_index].size());
+    for(int i=0; i < (int)solution_ik[min_index].size(); i++)
     {   
-      q_out(i) = pr2_arm_ik_.solution_ik_[min_index][i];
+      q_out(i) = solution_ik[min_index][i];
     }
     return 1;
   }
@@ -113,27 +114,28 @@ int PR2ArmIKSolver::CartToJnt(const KDL::JntArray& q_init,
                               std::vector<KDL::JntArray> &q_out)
 {
   Eigen::Matrix4f b = KDLToEigenMatrix(p_in);
+  std::vector<std::vector<double> > solution_ik;
   KDL::JntArray q;
 
   if(free_angle_ == 0)
   {
-    pr2_arm_ik_.computeIKShoulderPan(b,q_init(0));
+    pr2_arm_ik_.computeIKShoulderPan(b,q_init(0),solution_ik);
   }
   else
   {
-    pr2_arm_ik_.computeIKShoulderRoll(b,q_init(2));
+    pr2_arm_ik_.computeIKShoulderRoll(b,q_init(2),solution_ik);
   }
   
-  if(pr2_arm_ik_.solution_ik_.empty())
+  if(solution_ik.empty())
     return -1;
 
   q.resize(7);
   q_out.clear();
-  for(int i=0; i< (int) pr2_arm_ik_.solution_ik_.size(); i++)
+  for(int i=0; i< (int) solution_ik.size(); i++)
   {     
     for(int j=0; j < 7; j++)
     {   
-      q(j) = pr2_arm_ik_.solution_ik_[i][j];
+      q(j) = solution_ik[i][j];
     }
     q_out.push_back(q);
   }

@@ -108,7 +108,7 @@ namespace pr2_arm_kinematics {
       {
         ROS_INFO("PR2Kinematics can solve FK for %s",fk_solver_info_.link_names[i].c_str());
       }
-      ROS_INFO("PR2Kinematics::active");
+      ROS_INFO("PR2KinematicsPlugin::active for %s",name.c_str());
       active_ = true;
     }    
     return active_;
