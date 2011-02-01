@@ -224,7 +224,7 @@ namespace pr2_arm_kinematics {
     tf::Stamped<tf::Pose> tf_pose;
 
     jnt_pos_in.resize(dimension_);
-    for(int i=0; i < dimension_; i++)
+    for(int i=0; i < (int) request.robot_state.joint_state.position.size(); i++) 
     {
       int tmp_index = getJointIndex(request.robot_state.joint_state.name[i],fk_solver_info_);
       if(tmp_index >=0)
