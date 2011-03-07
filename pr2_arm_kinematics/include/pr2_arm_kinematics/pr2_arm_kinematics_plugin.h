@@ -83,7 +83,8 @@ class PR2ArmKinematicsPlugin : public kinematics::KinematicsBase
      */
     bool getPositionIK(const geometry_msgs::Pose &ik_pose,
                        const std::vector<double> &ik_seed_state,
-                       std::vector<double> &solution);      
+                       std::vector<double> &solution,
+		       int &error_code);      
     
     /**
      * @brief Given a desired pose of the end-effector, search for the joint angles required to reach it.
@@ -96,7 +97,8 @@ class PR2ArmKinematicsPlugin : public kinematics::KinematicsBase
     bool searchPositionIK(const geometry_msgs::Pose &ik_pose,
                           const std::vector<double> &ik_seed_state,
                           const double &timeout,
-                          std::vector<double> &solution);      
+                          std::vector<double> &solution,
+			  int &error_code);      
     /**
      * @brief Given a desired pose of the end-effector, search for the joint angles required to reach it.
      * This particular method is intended for "searching" for a solutions by stepping through the redundancy
@@ -110,7 +112,9 @@ class PR2ArmKinematicsPlugin : public kinematics::KinematicsBase
                           const double &timeout,
                           std::vector<double> &solution,
                           const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
-                          const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback);    
+                          const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback,
+			  int &error_code);      
+    
     /**
      * @brief Given a set of joint angles and a set of links, compute their pose
      * @param request  - the request contains the joint angles, set of links for which poses are to be computed and a timeout
