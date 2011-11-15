@@ -34,7 +34,7 @@
 #define PR2_ARM_IK_SOLVER_H
 
 #include <urdf/model.h>
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <kdl/chainiksolver.hpp>
 #include <pr2_arm_kinematics/pr2_arm_ik.h>
 #include <pr2_arm_kinematics/pr2_arm_kinematics_utils.h>
@@ -139,6 +139,12 @@ static const int TIMED_OUT = -2;
                         const KDL::Frame& p_in, 
                         KDL::JntArray &q_out, 
                         const double &timeout);
+
+    int CartToJntSearch(const KDL::JntArray& q_in, 
+                        const KDL::Frame& p_in, 
+                        const double& consistency_limit, 
+                        KDL::JntArray &q_out, 
+                        const double &timeout);
     /**
        @brief A method to get chain information about the serial chain that the IK operates on 
        @param response This class gets populated with information about the joints that IK operates on, including joint names and limits.
@@ -159,13 +165,32 @@ static const int TIMED_OUT = -2;
                         const KDL::Frame& p_in, 
                         KDL::JntArray &q_out, 
                         const double &timeout, 
-                        motion_planning_msgs::ArmNavigationErrorCodes &error_code,
-                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,motion_planning_msgs::ArmNavigationErrorCodes &)> &desired_pose_callback,
-                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,motion_planning_msgs::ArmNavigationErrorCodes &)> &solution_callback);
+                        arm_navigation_msgs::ArmNavigationErrorCodes &error_code,
+                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,arm_navigation_msgs::ArmNavigationErrorCodes &)> &desired_pose_callback,
+                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,arm_navigation_msgs::ArmNavigationErrorCodes &)> &solution_callback);
+
+    int CartToJntSearch(const KDL::JntArray& q_in, 
+                        const KDL::Frame& p_in, 
+                        KDL::JntArray &q_out, 
+                        const double &timeout, 
+                        const double& consistency_limit, 
+                        arm_navigation_msgs::ArmNavigationErrorCodes &error_code,
+                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,arm_navigation_msgs::ArmNavigationErrorCodes &)> &desired_pose_callback,
+                        const boost::function<void(const KDL::JntArray&,const KDL::Frame&,arm_navigation_msgs::ArmNavigationErrorCodes &)> &solution_callback);
+
+
 
     std::string getFrameId();
 
-    private:
+    unsigned int getFreeAngle() const {
+      return free_angle_;
+    }
+
+    void setFreeAngle(const unsigned int& free_angle) {
+      free_angle_ = free_angle;
+    }
+
+  private:
 
     bool getCount(int &count, const int &max_count, const int &min_count);
 

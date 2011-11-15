@@ -37,7 +37,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <angles/angles.h>
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <kdl/frames.hpp>
 #include <kdl/jntarray.hpp>
 #include <kdl/tree.hpp>
@@ -80,8 +80,6 @@ namespace pr2_arm_kinematics
 
   bool loadRobotModel(ros::NodeHandle node_handle, 
                       urdf::Model &robot_model, 
-                      std::string &root_name, 
-                      std::string &tip_name, 
                       std::string &xml_string);
 
   bool getKDLChain(const std::string &xml_string, 
@@ -103,7 +101,7 @@ namespace pr2_arm_kinematics
   bool checkLinkName(const std::string &link_name, 
                      const kinematics_msgs::KinematicSolverInfo &chain_info);
  
-  bool checkRobotState(motion_planning_msgs::RobotState &robot_state,
+  bool checkRobotState(arm_navigation_msgs::RobotState &robot_state,
                        const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool checkFKService(kinematics_msgs::GetPositionFK::Request &request, 
@@ -115,21 +113,21 @@ namespace pr2_arm_kinematics
                       const kinematics_msgs::KinematicSolverInfo &chain_info);
  
   bool checkConstraintAwareIKService(kinematics_msgs::GetConstraintAwarePositionIK::Request &request, 
-                                   kinematics_msgs::GetConstraintAwarePositionIK::Response &response,
-                                   const kinematics_msgs::KinematicSolverInfo &chain_info);
+                                     kinematics_msgs::GetConstraintAwarePositionIK::Response &response,
+                                     const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   int getJointIndex(const std::string &name,
                     const kinematics_msgs::KinematicSolverInfo &chain_info);
 
   bool convertPoseToRootFrame(const geometry_msgs::PoseStamped &pose_msg, 
                               KDL::Frame &pose_kdl, 
-                              const std::string &root_frame, 
-                              const tf::TransformListener &tf);
+                              const std::string &root_frame,
+                              tf::TransformListener& tf);
 
   bool convertPoseToRootFrame(const geometry_msgs::PoseStamped &pose_msg, 
                               geometry_msgs::PoseStamped &pose_msg_out, 
-                              const std::string &root_frame, 
-                              const tf::TransformListener &tf);
+                              const std::string &root_frame,
+                              tf::TransformListener& tf);
 
   int getKDLSegmentIndex(const KDL::Chain &chain, 
                          const std::string &name);

@@ -49,7 +49,7 @@
 #include <kinematics_msgs/GetPositionFK.h>
 #include <kinematics_msgs/GetPositionIK.h>
 #include <kinematics_msgs/GetKinematicSolverInfo.h>
-#include <motion_planning_msgs/ArmNavigationErrorCodes.h>
+#include <arm_navigation_msgs/ArmNavigationErrorCodes.h>
 
 #include <kdl/chainfksolverpos_recursive.hpp>
 
@@ -71,9 +71,9 @@ namespace pr2_arm_kinematics
      *
      *  To use this wrapper, you must have a roscore running with a robot description available from the ROS param server. 
      */
-    PR2ArmKinematics();
+    PR2ArmKinematics(bool create_transform_listener = true);
 
-    virtual ~PR2ArmKinematics(){};
+    virtual ~PR2ArmKinematics();
 
     /** 
      *  @brief Specifies if the node is active or not
@@ -86,8 +86,8 @@ namespace pr2_arm_kinematics
      * @param A request message. See service definition for GetPositionIK for more information on this message.
      * @param The response message. See service definition for GetPositionIK for more information on this message.
      */
-    bool getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
-                   kinematics_msgs::GetPositionIK::Response &response);
+    virtual bool getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
+                               kinematics_msgs::GetPositionIK::Response &response);
 
     /**
      * @brief This is the basic kinematics info service that will return information about the kinematics node.
@@ -115,6 +115,14 @@ namespace pr2_arm_kinematics
 
     protected:
 
+    // Helper function that assumes that everything is in the correct frame
+    bool getPositionIKHelper(kinematics_msgs::GetPositionIK::Request &request, 
+			     kinematics_msgs::GetPositionIK::Response &response);
+    
+    virtual bool transformPose(const std::string& des_frame,
+			       const geometry_msgs::PoseStamped& pose_in,
+			       geometry_msgs::PoseStamped& pose_out);
+    
     bool active_;
     int free_angle_;
     urdf::Model robot_model_;
@@ -122,7 +130,7 @@ namespace pr2_arm_kinematics
     ros::NodeHandle node_handle_, root_handle_;
     boost::shared_ptr<pr2_arm_kinematics::PR2ArmIKSolver> pr2_arm_ik_solver_;
     ros::ServiceServer ik_service_,fk_service_,ik_solver_info_service_,fk_solver_info_service_;
-    tf::TransformListener tf_;
+    tf::TransformListener* tf_;
     std::string root_name_;
     int dimension_;
     boost::shared_ptr<KDL::ChainFkSolverPos_recursive> jnt_to_pose_solver_;

@@ -1,39 +1,39 @@
 /*********************************************************************
-*
-* Software License Agreement (BSD License)
-*
-*  Copyright (c) 2008, Willow Garage, Inc.
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-*
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*
-* Author: Sachin Chitta
-*********************************************************************/
+ *
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Author: Sachin Chitta
+ *********************************************************************/
 
 #ifndef PR2_ARM_IK_CONSTRAINT_AWARE_H
 #define PR2_ARM_IK_CONSTRAINT_AWARE_H
@@ -48,12 +48,10 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <planning_environment/monitors/planning_monitor.h>
-#include <planning_models/kinematic_model.h>
+#include <planning_environment/models/collision_models_interface.h>
 
-#include <motion_planning_msgs/DisplayTrajectory.h>
-#include <motion_planning_msgs/LinkPadding.h>
-#include <motion_planning_msgs/ArmNavigationErrorCodes.h>
+#include <arm_navigation_msgs/DisplayTrajectory.h>
+#include <arm_navigation_msgs/ArmNavigationErrorCodes.h>
 
 #include <urdf/model.h>
 
@@ -76,12 +74,10 @@ public:
   PR2ArmIKConstraintAware();
 
   virtual ~PR2ArmIKConstraintAware()
-	{
-    if (planning_monitor_)
-      delete planning_monitor_;
-    if (collision_models_)
-      delete collision_models_;
-	};
+  {
+    if (collision_models_interface_)
+      delete collision_models_interface_;
+  };
 
   /**
    * @brief This method searches for and returns the closest solution to the initial guess in the first set of solutions it finds. 
@@ -97,7 +93,7 @@ public:
                       const KDL::Frame& p_in, 
                       KDL::JntArray &q_out, 
                       const double &timeout, 
-                      motion_planning_msgs::ArmNavigationErrorCodes& error_code);
+                      arm_navigation_msgs::ArmNavigationErrorCodes& error_code);
 
   /**
    * @brief This method searches for and returns the closest solution to the initial guess in the first set of solutions it finds. 
@@ -111,47 +107,44 @@ public:
    */
   bool getConstraintAwarePositionIK(kinematics_msgs::GetConstraintAwarePositionIK::Request &request, 
                                     kinematics_msgs::GetConstraintAwarePositionIK::Response &response);
+
+  virtual bool getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
+                             kinematics_msgs::GetPositionIK::Response &response);
+  
+ protected:
+
+    virtual bool transformPose(const std::string& des_frame,
+			       const geometry_msgs::PoseStamped& pose_in,
+			       geometry_msgs::PoseStamped& pose_out);
+
+
 private:
 
   ros::ServiceServer ik_collision_service_;
-  planning_environment::CollisionModels *collision_models_;
-  planning_environment::PlanningMonitor *planning_monitor_;
-  planning_models::KinematicState* kinematic_state_;
+  planning_environment::CollisionModelsInterface *collision_models_interface_;
   std::string group_;
   bool use_collision_map_;
   ros::Publisher vis_marker_publisher_;
   ros::Publisher vis_marker_array_publisher_;
   void contactFound(collision_space::EnvironmentModel::Contact &contact);
-  std::vector<std::string> default_collision_links_;
   std::vector<std::string> end_effector_collision_links_;
   std::vector<std::string> arm_links_;
   void initialPoseCheck(const KDL::JntArray &jnt_array, 
                         const KDL::Frame &p_in,
-                        motion_planning_msgs::ArmNavigationErrorCodes &error_code);
+                        arm_navigation_msgs::ArmNavigationErrorCodes &error_code);
   void collisionCheck(const KDL::JntArray &jnt_array, 
                       const KDL::Frame &p_in,
-                      motion_planning_msgs::ArmNavigationErrorCodes &error_code);
+                      arm_navigation_msgs::ArmNavigationErrorCodes &error_code);
   void printStringVec(const std::string &prefix, const std::vector<std::string> &string_vector);
   ros::Publisher display_trajectory_publisher_;
   bool visualize_solution_;
   kinematics_msgs::PositionIKRequest ik_request_;
-  motion_planning_msgs::OrderedCollisionOperations collision_operations_;
-  std::vector<motion_planning_msgs::LinkPadding> link_padding_;
-  std::vector<motion_planning_msgs::AllowedContactSpecification> allowed_contacts_;
-  motion_planning_msgs::Constraints constraints_;
-  bool setup_collision_environment_;
-  bool setupCollisionEnvironment(void);
+  ros::Time last_planning_scene_drop_;
+  arm_navigation_msgs::Constraints constraints_;
   void advertiseIK();
 
-  bool isReady(motion_planning_msgs::ArmNavigationErrorCodes &error_code);
+  bool isReady(arm_navigation_msgs::ArmNavigationErrorCodes &error_code);
   void sendEndEffectorPose(const planning_models::KinematicState* state, bool valid);
-
-  //! A model of the robot to see which joints wrap around
-  urdf::Model robot_model_;
-  //! Flag that tells us if the robot model was initialized successfully
-  bool robot_model_initialized_;
-
-
 };
 }
 #endif

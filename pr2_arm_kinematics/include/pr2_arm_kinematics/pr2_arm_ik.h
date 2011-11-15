@@ -34,7 +34,7 @@
 #define PR2_ARM_IK_H
 
 #include <urdf/model.h>
-#include <Eigen/Array>
+#include <Eigen/Core>
 #include <Eigen/LU>// provides LU decomposition
 #include <kdl/chainiksolver.hpp>
 #include <pr2_arm_kinematics/pr2_arm_kinematics_utils.h>

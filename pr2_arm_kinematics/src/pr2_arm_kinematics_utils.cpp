@@ -36,7 +36,7 @@
 namespace pr2_arm_kinematics
 {
   static const double IK_DEFAULT_TIMEOUT = 10.0;
-  bool loadRobotModel(ros::NodeHandle node_handle, urdf::Model &robot_model, std::string &root_name, std::string &tip_name, std::string &xml_string)
+  bool loadRobotModel(ros::NodeHandle node_handle, urdf::Model &robot_model, std::string &xml_string)
   {
     std::string urdf_xml,full_urdf_xml;
     node_handle.param("urdf_xml",urdf_xml,std::string("robot_description"));
@@ -60,14 +60,6 @@ namespace pr2_arm_kinematics
       exit(1);
     }
     robot_model.initXml(root);
-    if (!node_handle.getParam("root_name", root_name)){
-      ROS_FATAL("PR2IK: No root name found on parameter server");
-      return false;
-    }
-    if (!node_handle.getParam("tip_name", tip_name)){
-      ROS_FATAL("PR2IK: No tip name found on parameter server");
-      return false;
-    }
     return true;
   }
 
@@ -82,7 +74,7 @@ namespace pr2_arm_kinematics
     }
     if (!tree.getChain(root_name, tip_name, kdl_chain))
     {
-      ROS_ERROR("Could not initialize chain object");
+      ROS_ERROR_STREAM("Could not initialize chain object for base " << root_name << " tip " << tip_name);
       return false;
     }
     return true;
@@ -284,7 +276,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
     return false;   
   }
 
-  bool checkRobotState(motion_planning_msgs::RobotState &robot_state,
+  bool checkRobotState(arm_navigation_msgs::RobotState &robot_state,
                      const kinematics_msgs::KinematicSolverInfo &chain_info)
   {
     if((int) robot_state.joint_state.position.size() != (int) robot_state.joint_state.name.size())
@@ -366,8 +358,8 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
   bool convertPoseToRootFrame(const geometry_msgs::PoseStamped &pose_msg, 
                               KDL::Frame &pose_kdl, 
-                              const std::string &root_frame, 
-                              const tf::TransformListener &tf)
+                              const std::string &root_frame,
+                              tf::TransformListener& tf)
   {
     geometry_msgs::PoseStamped pose_stamped;
     if(!convertPoseToRootFrame(pose_msg, pose_stamped, root_frame,tf))
@@ -379,8 +371,8 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
 
   bool convertPoseToRootFrame(const geometry_msgs::PoseStamped &pose_msg, 
                               geometry_msgs::PoseStamped &pose_msg_out, 
-                              const std::string &root_frame, 
-                              const tf::TransformListener &tf)
+                              const std::string &root_frame,
+                              tf::TransformListener& tf)
   {
     geometry_msgs::PoseStamped pose_msg_in = pose_msg;
     ROS_DEBUG("Request:\nframe_id: %s\nPosition: %f %f %f\n:Orientation: %f %f %f %f\n",
@@ -392,6 +384,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
               pose_msg_in.pose.orientation.y,
               pose_msg_in.pose.orientation.z,
               pose_msg_in.pose.orientation.w);
+    pose_msg_out = pose_msg;
     tf::Stamped<tf::Pose> pose_stamped;
     poseStampedMsgToTF(pose_msg_in, pose_stamped);
     

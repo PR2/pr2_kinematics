@@ -51,174 +51,236 @@ PLUGINLIB_DECLARE_CLASS(pr2_arm_kinematics,PR2ArmKinematicsPlugin, pr2_arm_kinem
 
 namespace pr2_arm_kinematics {
 
- PR2ArmKinematicsPlugin::PR2ArmKinematicsPlugin():active_(false){}
+PR2ArmKinematicsPlugin::PR2ArmKinematicsPlugin():active_(false){}
 
-  bool PR2ArmKinematicsPlugin::isActive()
+bool PR2ArmKinematicsPlugin::isActive()
+{
+  if(active_)
+    return true;
+  return false;
+}
+
+bool PR2ArmKinematicsPlugin::initialize(const std::string& group_name,
+                                        const std::string& base_name,
+                                        const std::string& tip_name,
+                                        const double& search_discretization)
+{
+  setValues(group_name, base_name, tip_name,search_discretization);
+  urdf::Model robot_model;
+  std::string xml_string;
+  ros::NodeHandle private_handle("~/"+group_name);
+  dimension_ = 7;
+  while(!loadRobotModel(private_handle,robot_model,xml_string) && private_handle.ok())
   {
-    if(active_)
-      return true;
+    ROS_ERROR("Could not load robot model. Are you sure the robot model is on the parameter server?");
+    ros::Duration(0.5).sleep();
+  }
+
+  ROS_DEBUG("Loading KDL Tree");
+  if(!getKDLChain(xml_string,base_name_,tip_name_,kdl_chain_))
+  {
+    active_ = false;
+    ROS_ERROR("Could not load kdl tree");
+  }
+  ROS_DEBUG("Advertising services");
+  jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
+  private_handle.param<int>("free_angle",free_angle_,2);
+
+  pr2_arm_ik_solver_.reset(new pr2_arm_kinematics::PR2ArmIKSolver(robot_model, base_name_,tip_name_, search_discretization_,free_angle_));
+  if(!pr2_arm_ik_solver_->active_)
+  {
+    ROS_ERROR("Could not load ik");
+    active_ = false;
+  }
+  else
+  {
+
+    pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
+    pr2_arm_kinematics::getKDLChainInfo(kdl_chain_,fk_solver_info_);
+    fk_solver_info_.joint_names = ik_solver_info_.joint_names;
+
+    for(unsigned int i=0; i < ik_solver_info_.joint_names.size(); i++)
+    {
+      ROS_DEBUG("PR2Kinematics:: joint name: %s",ik_solver_info_.joint_names[i].c_str());
+    }
+    for(unsigned int i=0; i < ik_solver_info_.link_names.size(); i++)
+    {
+      ROS_DEBUG("PR2Kinematics can solve IK for %s",ik_solver_info_.link_names[i].c_str());
+    }
+    for(unsigned int i=0; i < fk_solver_info_.link_names.size(); i++)
+    {
+      ROS_DEBUG("PR2Kinematics can solve FK for %s",fk_solver_info_.link_names[i].c_str());
+    }
+    ROS_DEBUG("PR2KinematicsPlugin::active for %s",group_name.c_str());
+    active_ = true;
+  }    
+  return active_;
+}
+
+bool PR2ArmKinematicsPlugin::getPositionIK(const geometry_msgs::Pose &ik_pose,
+                                           const std::vector<double> &ik_seed_state,
+                                           std::vector<double> &solution,
+                                           int &error_code)
+{
+  if(!active_)
+  {
+    ROS_ERROR("kinematics not active");
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
+    
+  KDL::Frame pose_desired;
+  tf::PoseMsgToKDL(ik_pose, pose_desired);
+
+  //Do the IK
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_out;
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = ik_seed_state[i];
+  }
+
+  int ik_valid = pr2_arm_ik_solver_->CartToJnt(jnt_pos_in,
+                                               pose_desired,
+                                               jnt_pos_out);
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+  {
+    error_code = kinematics::NO_IK_SOLUTION; 
     return false;
   }
 
-  bool PR2ArmKinematicsPlugin::initialize(std::string name)
+  if(ik_valid >= 0)
   {
-    urdf::Model robot_model;
-    std::string tip_name, xml_string;
-    ros::NodeHandle private_handle("~/"+name);
-    dimension_ = 7;
-    while(!loadRobotModel(private_handle,robot_model,root_name_,tip_name,xml_string) && private_handle.ok())
-    {
-      ROS_ERROR("Could not load robot model. Are you sure the robot model is on the parameter server?");
-      ros::Duration(0.5).sleep();
-    }
-
-    ROS_INFO("Loading KDL Tree");
-    if(!getKDLChain(xml_string,root_name_,tip_name,kdl_chain_))
-    {
-      active_ = false;
-      ROS_ERROR("Could not load kdl tree");
-    }
-    ROS_INFO("Advertising services");
-    jnt_to_pose_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
-    private_handle.param<int>("free_angle",free_angle_,2);
-
-    private_handle.param<double>("search_discretization",search_discretization_,0.01);
-    pr2_arm_ik_solver_.reset(new pr2_arm_kinematics::PR2ArmIKSolver(robot_model,root_name_,tip_name, search_discretization_,free_angle_));
-    if(!pr2_arm_ik_solver_->active_)
-    {
-      ROS_ERROR("Could not load ik");
-      active_ = false;
-    }
-    else
-    {
-
-      pr2_arm_ik_solver_->getSolverInfo(ik_solver_info_);
-      pr2_arm_kinematics::getKDLChainInfo(kdl_chain_,fk_solver_info_);
-      fk_solver_info_.joint_names = ik_solver_info_.joint_names;
-
-      for(unsigned int i=0; i < ik_solver_info_.joint_names.size(); i++)
-      {
-        ROS_INFO("PR2Kinematics:: joint name: %s",ik_solver_info_.joint_names[i].c_str());
-      }
-      for(unsigned int i=0; i < ik_solver_info_.link_names.size(); i++)
-      {
-        ROS_INFO("PR2Kinematics can solve IK for %s",ik_solver_info_.link_names[i].c_str());
-      }
-      for(unsigned int i=0; i < fk_solver_info_.link_names.size(); i++)
-      {
-        ROS_INFO("PR2Kinematics can solve FK for %s",fk_solver_info_.link_names[i].c_str());
-      }
-      ROS_INFO("PR2KinematicsPlugin::active for %s",name.c_str());
-      active_ = true;
-    }    
-    return active_;
-  }
-
-  bool PR2ArmKinematicsPlugin::getPositionIK(const geometry_msgs::Pose &ik_pose,
-                                           const std::vector<double> &ik_seed_state,
-					     std::vector<double> &solution,
-					     int &error_code)
-  {
-    if(!active_)
-    {
-      ROS_ERROR("kinematics not active");
-      error_code = kinematics::NO_IK_SOLUTION; 
-      return false;
-    }
-    KDL::Frame pose_desired;
-    tf::PoseMsgToKDL(ik_pose, pose_desired);
-
-    //Do the IK
-    KDL::JntArray jnt_pos_in;
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_in.resize(dimension_);
+    solution.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-        jnt_pos_in(i) = ik_seed_state[i];
+      solution[i] = jnt_pos_out(i);
     }
+    error_code = kinematics::SUCCESS;
+    return true;
+  }
+  else
+  {
+    ROS_DEBUG("An IK solution could not be found");   
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
+}
 
-    int ik_valid = pr2_arm_ik_solver_->CartToJnt(jnt_pos_in,
-                                                 pose_desired,
-                                                 jnt_pos_out);
-    if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
-    {
-      error_code = kinematics::NO_IK_SOLUTION; 
-      return false;
-    }
-
-    if(ik_valid >= 0)
-    {
-      solution.resize(dimension_);
-      for(int i=0; i < dimension_; i++)
-      {
-        solution[i] = jnt_pos_out(i);
-      }
-      error_code = kinematics::SUCCESS;
-      return true;
-    }
-    else
-    {
-      ROS_DEBUG("An IK solution could not be found");   
-      error_code = kinematics::NO_IK_SOLUTION; 
-      return false;
-    }
+bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                                              const std::vector<double> &ik_seed_state,
+                                              const double &timeout,
+                                              std::vector<double> &solution,
+                                              int &error_code)
+{
+  if(!active_)
+  {
+    ROS_ERROR("kinematics not active");
+    error_code = kinematics::INACTIVE; 
+    return false;
+  }
+  KDL::Frame pose_desired;
+  tf::PoseMsgToKDL(ik_pose, pose_desired);
+  //Do the IK
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_out;
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = ik_seed_state[i];
   }
 
-  bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
-                                                const std::vector<double> &ik_seed_state,
-                                                const double &timeout,
-                                                std::vector<double> &solution,
-						int &error_code)
-  {
-    if(!active_)
-    {
-      ROS_ERROR("kinematics not active");
-      error_code = kinematics::INACTIVE; 
-      return false;
-    }
-    KDL::Frame pose_desired;
-    tf::PoseMsgToKDL(ik_pose, pose_desired);
+  int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                     pose_desired,
+                                                     jnt_pos_out,
+                                                     timeout);
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
 
-    //Do the IK
-    KDL::JntArray jnt_pos_in;
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_in.resize(dimension_);
+  if(ik_valid >= 0)
+  {
+    solution.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-        jnt_pos_in(i) = ik_seed_state[i];
+      solution[i] = jnt_pos_out(i);
     }
-
-    int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
-                                                       pose_desired,
-                                                       jnt_pos_out,
-                                                       timeout);
-    if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
-    {
-      error_code = kinematics::NO_IK_SOLUTION; 
-      return false;
-    }
-
-    if(ik_valid >= 0)
-    {
-      solution.resize(dimension_);
-      for(int i=0; i < dimension_; i++)
-      {
-        solution[i] = jnt_pos_out(i);
-      }
-      error_code = kinematics::SUCCESS;
-      return true;
-    }
-    else
-    {
-      ROS_DEBUG("An IK solution could not be found");   
-      error_code = kinematics::NO_IK_SOLUTION; 
-      return false;
-    }
+    error_code = kinematics::SUCCESS;
+    return true;
   }
+  else
+  {
+    ROS_DEBUG("An IK solution could not be found");   
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
+}
+
+bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                                              const std::vector<double> &ik_seed_state,
+                                              const double &timeout,
+                                              const unsigned int& redundancy,
+                                              const double &consistency_limit,
+                                              std::vector<double> &solution,
+                                              int &error_code)
+{
+  if(!active_)
+  {
+    ROS_ERROR("kinematics not active");
+    error_code = kinematics::INACTIVE; 
+    return false;
+  }
+  KDL::Frame pose_desired;
+  tf::PoseMsgToKDL(ik_pose, pose_desired);
+
+  //Do the IK
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_out;
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = ik_seed_state[i];
+  }
+
+  unsigned int old_free_angle = pr2_arm_ik_solver_->getFreeAngle();
+  pr2_arm_ik_solver_->setFreeAngle(redundancy);
+  int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                     pose_desired,
+                                                     consistency_limit,
+                                                     jnt_pos_out,
+                                                     timeout);
+  pr2_arm_ik_solver_->setFreeAngle(old_free_angle);
+
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+  {
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
+
+  if(ik_valid >= 0)
+  {
+    solution.resize(dimension_);
+    for(int i=0; i < dimension_; i++)
+    {
+      solution[i] = jnt_pos_out(i);
+    }
+    error_code = kinematics::SUCCESS;
+    return true;
+  }
+  else
+  {
+    ROS_DEBUG("An IK solution could not be found");   
+    error_code = kinematics::NO_IK_SOLUTION; 
+    return false;
+  }
+}
+
 
 void PR2ArmKinematicsPlugin::desiredPoseCallback(const KDL::JntArray& jnt_array, 
                                                  const KDL::Frame& ik_pose,
-                                                 motion_planning_msgs::ArmNavigationErrorCodes& error_code)
+                                                 arm_navigation_msgs::ArmNavigationErrorCodes& error_code)
 {
   std::vector<double> ik_seed_state;
   ik_seed_state.resize(dimension_);
@@ -231,15 +293,15 @@ void PR2ArmKinematicsPlugin::desiredPoseCallback(const KDL::JntArray& jnt_array,
 
   desiredPoseCallback_(ik_pose_msg,ik_seed_state,int_error_code);
   if(int_error_code)
-    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::SUCCESS;
+    error_code.val = arm_navigation_msgs::ArmNavigationErrorCodes::SUCCESS;
   else
-    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
+    error_code.val = arm_navigation_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
 }
 
 
 void PR2ArmKinematicsPlugin::jointSolutionCallback(const KDL::JntArray& jnt_array, 
                                                    const KDL::Frame& ik_pose,
-                                                   motion_planning_msgs::ArmNavigationErrorCodes& error_code)
+                                                   arm_navigation_msgs::ArmNavigationErrorCodes& error_code)
 {
   std::vector<double> ik_seed_state;
   ik_seed_state.resize(dimension_);
@@ -252,149 +314,189 @@ void PR2ArmKinematicsPlugin::jointSolutionCallback(const KDL::JntArray& jnt_arra
 
   solutionCallback_(ik_pose_msg,ik_seed_state,int_error_code);
   if(int_error_code > 0)
-    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::SUCCESS;
+    error_code.val = arm_navigation_msgs::ArmNavigationErrorCodes::SUCCESS;
   else
-    error_code.val = motion_planning_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
+    error_code.val = arm_navigation_msgs::ArmNavigationErrorCodes::NO_IK_SOLUTION;     
 }
 
-  bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
-                                                const std::vector<double> &ik_seed_state,
-                                                const double &timeout,
-                                                std::vector<double> &solution,
-                                                const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
-                                                const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback,
-						int &error_code_int)  
+bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                                              const std::vector<double> &ik_seed_state,
+                                              const double &timeout,
+                                              std::vector<double> &solution,
+                                              const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
+                                              const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback,
+                                              int &error_code_int)  
+{
+  if(!active_)
   {
-    if(!active_)
-    {
-      ROS_ERROR("kinematics not active");
-      error_code_int = kinematics::INACTIVE;
-      return false;
-    }
-    KDL::Frame pose_desired;
-    tf::PoseMsgToKDL(ik_pose, pose_desired);
+    ROS_ERROR("kinematics not active");
+    error_code_int = kinematics::INACTIVE;
+    return false;
+  }
+  KDL::Frame pose_desired;
+  tf::PoseMsgToKDL(ik_pose, pose_desired);
 
-    desiredPoseCallback_ = desired_pose_callback;
-    solutionCallback_    = solution_callback;
+  desiredPoseCallback_ = desired_pose_callback;
+  solutionCallback_    = solution_callback;
 
-    //Do the IK
-    KDL::JntArray jnt_pos_in;
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_in.resize(dimension_);
+  //Do the IK
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_out;
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = ik_seed_state[i];
+  }
+
+  arm_navigation_msgs::ArmNavigationErrorCodes error_code;
+  int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                     pose_desired,
+                                                     jnt_pos_out,
+                                                     timeout,
+                                                     error_code,
+                                                     boost::bind(&PR2ArmKinematicsPlugin::desiredPoseCallback, this, _1, _2, _3),
+                                                     boost::bind(&PR2ArmKinematicsPlugin::jointSolutionCallback, this, _1, _2, _3));
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+    return false;
+
+  if(ik_valid >= 0)
+  {
+    solution.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-        jnt_pos_in(i) = ik_seed_state[i];
+      solution[i] = jnt_pos_out(i);
     }
+    error_code_int = kinematics::SUCCESS;
+    return true;
+  }
+  else
+  {
+    ROS_DEBUG("An IK solution could not be found");   
+    error_code_int = error_code.val;
+    return false;
+  }
+}
 
-    motion_planning_msgs::ArmNavigationErrorCodes error_code;
-    int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
-                                                       pose_desired,
-                                                       jnt_pos_out,
-                                                       timeout,
-                                                       error_code,
-                                                       boost::bind(&PR2ArmKinematicsPlugin::desiredPoseCallback, this, _1, _2, _3),
-                                                       boost::bind(&PR2ArmKinematicsPlugin::jointSolutionCallback, this, _1, _2, _3));
-    if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
-       return false;
+bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose,
+                                              const std::vector<double> &ik_seed_state,
+                                              const double &timeout,
+                                              const unsigned int& redundancy,
+                                              const double &consistency_limit,
+                                              std::vector<double> &solution,
+                                              const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
+                                              const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback,
+                                              int &error_code_int)  
+{
+  if(!active_)
+  {
+    ROS_ERROR("kinematics not active");
+    error_code_int = kinematics::INACTIVE;
+    return false;
+  }
+  KDL::Frame pose_desired;
+  tf::PoseMsgToKDL(ik_pose, pose_desired);
 
-    if(ik_valid >= 0)
+  desiredPoseCallback_ = desired_pose_callback;
+  solutionCallback_    = solution_callback;
+
+  //Do the IK
+  KDL::JntArray jnt_pos_in;
+  KDL::JntArray jnt_pos_out;
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = ik_seed_state[i];
+  }
+
+  arm_navigation_msgs::ArmNavigationErrorCodes error_code;
+  unsigned int old_free_angle = pr2_arm_ik_solver_->getFreeAngle();
+  pr2_arm_ik_solver_->setFreeAngle(redundancy);
+  int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
+                                                     pose_desired,
+                                                     jnt_pos_out,
+                                                     consistency_limit,
+                                                     timeout,
+                                                     error_code,
+                                                     boost::bind(&PR2ArmKinematicsPlugin::desiredPoseCallback, this, _1, _2, _3),
+                                                     boost::bind(&PR2ArmKinematicsPlugin::jointSolutionCallback, this, _1, _2, _3));
+  pr2_arm_ik_solver_->setFreeAngle(old_free_angle);
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+    return false;
+
+  if(ik_valid >= 0)
+  {
+    solution.resize(dimension_);
+    for(int i=0; i < dimension_; i++)
     {
-      solution.resize(dimension_);
-      for(int i=0; i < dimension_; i++)
-      {
-        solution[i] = jnt_pos_out(i);
-      }
-      error_code_int = kinematics::SUCCESS;
-      return true;
+      solution[i] = jnt_pos_out(i);
+    }
+    error_code_int = kinematics::SUCCESS;
+    return true;
+  }
+  else
+  {
+    ROS_DEBUG("An IK solution could not be found");   
+    error_code_int = error_code.val;
+    return false;
+  }
+}
+
+bool PR2ArmKinematicsPlugin::getPositionFK(const std::vector<std::string> &link_names,
+                                           const std::vector<double> &joint_angles,
+                                           std::vector<geometry_msgs::Pose> &poses)
+{
+  if(!active_)
+  {
+    ROS_ERROR("kinematics not active");
+    return false;
+  }
+
+  KDL::Frame p_out;
+  KDL::JntArray jnt_pos_in;
+  geometry_msgs::PoseStamped pose;
+  tf::Stamped<tf::Pose> tf_pose;
+
+  jnt_pos_in.resize(dimension_);
+  for(int i=0; i < dimension_; i++)
+  {
+    jnt_pos_in(i) = joint_angles[i];
+  }
+
+  poses.resize(link_names.size());
+
+  bool valid = true;
+  for(unsigned int i=0; i < poses.size(); i++)
+  {
+    ROS_DEBUG("End effector index: %d",pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,link_names[i]));
+    if(jnt_to_pose_solver_->JntToCart(jnt_pos_in,p_out,pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,link_names[i])) >=0)
+    {
+      tf::PoseKDLToMsg(p_out,poses[i]);
     }
     else
     {
-      ROS_DEBUG("An IK solution could not be found");   
-      error_code_int = error_code.val;
-      return false;
+      ROS_ERROR("Could not compute FK for %s",link_names[i].c_str());
+      valid = false;
     }
   }
+  return valid;
+}
 
-  bool PR2ArmKinematicsPlugin::getPositionFK(const std::vector<std::string> &link_names,
-                                             const std::vector<double> &joint_angles,
-                                             std::vector<geometry_msgs::Pose> &poses)
+const std::vector<std::string>& PR2ArmKinematicsPlugin::getJointNames() const
+{
+  if(!active_)
   {
-    if(!active_)
-    {
-      ROS_ERROR("kinematics not active");
-      return false;
-    }
-
-    KDL::Frame p_out;
-    KDL::JntArray jnt_pos_in;
-    geometry_msgs::PoseStamped pose;
-    tf::Stamped<tf::Pose> tf_pose;
-
-    jnt_pos_in.resize(dimension_);
-    for(int i=0; i < dimension_; i++)
-    {
-      jnt_pos_in(i) = joint_angles[i];
-    }
-
-    poses.resize(link_names.size());
-
-    bool valid = true;
-    for(unsigned int i=0; i < poses.size(); i++)
-    {
-      ROS_DEBUG("End effector index: %d",pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,link_names[i]));
-      if(jnt_to_pose_solver_->JntToCart(jnt_pos_in,p_out,pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,link_names[i])) >=0)
-      {
-        tf::PoseKDLToMsg(p_out,poses[i]);
-      }
-      else
-      {
-        ROS_ERROR("Could not compute FK for %s",link_names[i].c_str());
-        valid = false;
-      }
-    }
-    return valid;
+    ROS_ERROR("kinematics not active");
   }
+  return ik_solver_info_.joint_names;
+}
 
-  std::string PR2ArmKinematicsPlugin::getBaseFrame()
+const std::vector<std::string>& PR2ArmKinematicsPlugin::getLinkNames() const
+{
+  if(!active_)
   {
-    if(!active_)
-    {
-      ROS_ERROR("kinematics not active");
-      return std::string("");
-    }
-    return root_name_;
+    ROS_ERROR("kinematics not active");
   }
-
-  std::string PR2ArmKinematicsPlugin::getToolFrame()
-  {
-    if(!active_ || ik_solver_info_.link_names.empty())
-    {
-      ROS_ERROR("kinematics not active");
-      return std::string("");
-    }
-    return ik_solver_info_.link_names[0];
-  }
-
-  std::vector<std::string> PR2ArmKinematicsPlugin::getJointNames()
-  {
-    if(!active_)
-    {
-      std::vector<std::string> empty;
-      ROS_ERROR("kinematics not active");
-      return empty;
-    }
-    return ik_solver_info_.joint_names;
-  }
-
-  std::vector<std::string> PR2ArmKinematicsPlugin::getLinkNames()
-  {
-    if(!active_)
-    {
-      std::vector<std::string> empty;
-      ROS_ERROR("kinematics not active");
-      return empty;
-    }
-    return fk_solver_info_.link_names;
-  }
+  return fk_solver_info_.link_names;
+}
 
 } // namespace

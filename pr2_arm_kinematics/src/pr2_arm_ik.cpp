@@ -124,7 +124,7 @@ bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name
 
 void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, kinematics_msgs::KinematicSolverInfo &info)
 {
-  motion_planning_msgs::JointLimits limit;
+  arm_navigation_msgs::JointLimits limit;
   info.joint_names.push_back(joint->name);//Joints are coming in reverse order
   limit.min_position = joint->safety->soft_lower_limit;
   limit.max_position = joint->safety->soft_upper_limit;

@@ -35,28 +35,16 @@
 #include <pr2_arm_kinematics_constraint_aware/pr2_arm_kinematics_constraint_aware.h>
 #include <boost/thread.hpp>
 
-void spinThread()
-{
-  ros::spin();
-}
-
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "pr2_arm_kinematics_constraint_aware");
+
+  ros::AsyncSpinner spinner(1); 
+  spinner.start();
+
   pr2_arm_kinematics::PR2ArmIKConstraintAware pr2_arm_kinematics_constraint_aware;
-  if(pr2_arm_kinematics_constraint_aware.isActive())
-  {
-    ROS_INFO("Initialized pr2_arm_kinematics_constraint_aware.");
-    boost::thread spin_thread(&spinThread);
-    //    ros::spin();
-    while(ros::ok())
-    {
-      ros::Duration(0.01).sleep();
-    }
-  }
-  else
-  {
-    ROS_ERROR("Could not initialize collision environment, kinematics node will not start.");
-  }
+
+  ros::waitForShutdown();  
+
   return(0);
 }

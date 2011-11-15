@@ -10,7 +10,7 @@
   <depend package="collision_space"/>
   <depend package="planning_models"/>
   <depend package="planning_environment"/>
-  <depend package="mapping_msgs"/>
+  <depend package="arm_navigation_msgs"/>
 
   <export>
    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_arm_kinematics_constraint_aware_lib"/>
