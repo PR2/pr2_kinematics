@@ -150,7 +150,6 @@ public:
                                 const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &desired_pose_callback,
                                 const boost::function<void(const geometry_msgs::Pose &ik_pose,const std::vector<double> &ik_solution,int &error_code)> &solution_callback,
                                 int &error_code);      
->>>>>>> .merge-right.r53476
     
   /**
    * @brief Given a set of joint angles and a set of links, compute their pose

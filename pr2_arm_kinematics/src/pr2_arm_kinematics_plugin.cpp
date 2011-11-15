@@ -195,7 +195,7 @@ bool PR2ArmKinematicsPlugin::searchPositionIK(const geometry_msgs::Pose &ik_pose
                                                      pose_desired,
                                                      jnt_pos_out,
                                                      timeout);
-  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
+  if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION) {
     error_code = kinematics::NO_IK_SOLUTION; 
     return false;
   }
