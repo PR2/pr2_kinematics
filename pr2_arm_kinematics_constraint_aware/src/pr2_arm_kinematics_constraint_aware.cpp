@@ -371,7 +371,7 @@ void PR2ArmIKConstraintAware::initialPoseCheck(const KDL::JntArray &jnt_array,
 
   collision_models_interface_->setAlteredAllowedCollisionMatrix(acm);
 
-  btTransform transform;
+  tf::Transform transform;
   tf::poseMsgToTF(pose_stamped.pose,transform);
   if(!collision_models_interface_->getPlanningSceneState()->hasLinkState(ik_request_.ik_link_name)) {
     ROS_ERROR("Could not find end effector root_link %s", ik_request_.ik_link_name.c_str());
