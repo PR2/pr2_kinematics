@@ -6,7 +6,7 @@
   <url>http://ros.org/wiki/pr2_kinematics</url>
   <depend stack="arm_navigation" /> <!-- planning_environment, planning_models, kinematics_msgs, kinematics_base, collision_space, arm_navigation_msgs -->
   <depend stack="common_msgs" /> <!-- geometry_msgs -->
-  <depend stack="eigen" /> <!-- eigen -->
+  <depend stack="common_rosdeps" /> <!-- common_rosdeps -->
   <depend stack="geometry" /> <!-- tf_conversions, angles -->
   <depend stack="orocos_kinematics_dynamics" /> <!-- kdl -->
   <depend stack="pluginlib" /> <!-- pluginlib -->
