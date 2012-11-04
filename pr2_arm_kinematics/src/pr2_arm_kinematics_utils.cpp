@@ -364,7 +364,7 @@ bool checkJointNames(const std::vector<std::string> &joint_names,
     geometry_msgs::PoseStamped pose_stamped;
     if(!convertPoseToRootFrame(pose_msg, pose_stamped, root_frame,tf))
       return false;
-    tf::PoseMsgToKDL(pose_stamped.pose, pose_kdl);
+    tf::poseMsgToKDL(pose_stamped.pose, pose_kdl);
     return true;
   }
 

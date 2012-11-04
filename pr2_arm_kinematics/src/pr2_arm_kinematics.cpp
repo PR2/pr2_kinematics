@@ -174,7 +174,7 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
                                            kinematics_msgs::GetPositionIK::Response &response)
 {
   KDL::Frame pose_desired;
-  tf::PoseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
+  tf::poseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
 
   //Do the IK
   KDL::JntArray jnt_pos_in;

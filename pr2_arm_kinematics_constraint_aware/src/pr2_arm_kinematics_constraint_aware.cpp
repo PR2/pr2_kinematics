@@ -230,7 +230,7 @@ bool PR2ArmIKConstraintAware::getConstraintAwarePositionIK(kinematics_msgs::GetC
   KDL::JntArray jnt_pos_out;
   KDL::JntArray jnt_pos_in;
   KDL::Frame p_in;
-  tf::PoseMsgToKDL(pose_msg_out.pose,p_in);
+  tf::poseMsgToKDL(pose_msg_out.pose,p_in);
   jnt_pos_in.resize(dimension_);
   jnt_pos_out.resize(dimension_);
   for(unsigned int i=0; i < request_in.ik_request.ik_seed_state.joint_state.name.size(); i++)
@@ -352,7 +352,7 @@ void PR2ArmIKConstraintAware::initialPoseCheck(const KDL::JntArray &jnt_array,
   std::string kinematic_frame_id = pr2_arm_ik_solver_->getFrameId();
   std::string planning_frame_id = collision_models_interface_->getWorldFrameId();
   geometry_msgs::PoseStamped pose_stamped;
-  tf::PoseKDLToMsg(p_in,pose_stamped.pose);
+  tf::poseKDLToMsg(p_in,pose_stamped.pose);
   pose_stamped.header.stamp = ros::Time::now();
   pose_stamped.header.frame_id = kinematic_frame_id;
    if(!collision_models_interface_->convertPoseGivenWorldTransform(*collision_models_interface_->getPlanningSceneState(),
