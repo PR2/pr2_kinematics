@@ -25,7 +25,6 @@
   <build_depend>kinematics_msgs</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>kinematics_base</build_depend>
-  <build_depend>common_rosdeps</build_depend>
   <build_depend>moveit_core</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
@@ -39,7 +38,6 @@
   <run_depend>kinematics_msgs</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>kinematics_base</run_depend>
-  <run_depend>common_rosdeps</run_depend>
 
   <!-- Dependencies needed only for running tests. -->
   <!-- <test_depend>roscpp</test_depend> -->
