@@ -32,14 +32,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
 #add_message_files(
-  FILES
-  # TODO: List your msg files here
-)
-#uncomment if you have defined services
-#add_service_files(
-  FILES
-  # TODO: List your msg files here
-)
 
 #common commands for building c++ executables and libraries
 #add_library(${PROJECT_NAME} src/example.cpp)

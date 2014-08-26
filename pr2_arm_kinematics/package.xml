@@ -17,7 +17,6 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>roscpp</build_depend>
-  <build_depend>kdl</build_depend>
   <build_depend>angles</build_depend>
   <build_depend>tf_conversions</build_depend>
   <build_depend>urdf</build_depend>
@@ -27,10 +26,11 @@
   <build_depend>pluginlib</build_depend>
   <build_depend>kinematics_base</build_depend>
   <build_depend>common_rosdeps</build_depend>
+  <build_depend>moveit_core</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>roscpp</run_depend>
-  <run_depend>kdl</run_depend>
+  <run_depend>moveit_core</run_depend>
   <run_depend>angles</run_depend>
   <run_depend>tf_conversions</run_depend>
   <run_depend>urdf</run_depend>

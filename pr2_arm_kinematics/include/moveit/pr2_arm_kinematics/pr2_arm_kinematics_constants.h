@@ -34,21 +34,13 @@
 
 /* Author: Sachin Chitta */
 
-#include <pr2_arm_kinematics/pr2_arm_kinematics.h>
+#ifndef MOVEIT_PR2_ARM_IK_CONSTANTS_
+#define MOVEIT_PR2_ARM_IK_CONSTANTS_
 
-int main(int argc, char** argv)
+namespace pr2_arm_kinematics
 {
-  ros::init(argc, argv, "pr2_arm_kinematics");
-  pr2_arm_kinematics::PR2ArmKinematics pr2_arm_kinematics;
-
-  if(!pr2_arm_kinematics.isActive())
-  {
-    ROS_ERROR("pr2_arm_kinematics could not be activated");
-  }
-  else
-  {
-    ROS_INFO("pr2_arm_kinematics active");
-    ros::spin();
-  }
-  return(0);
+  static const int NUM_JOINTS_ARM7DOF = 7;
+  static const double IK_EPS = 1e-5;
 }
+
+#endif

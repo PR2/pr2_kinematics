@@ -1,46 +1,50 @@
-//Software License Agreement (BSD License)
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
-//Copyright (c) 2008, Willow Garage, Inc.
-//All rights reserved.
-
-//Redistribution and use in source and binary forms, with or without
-//modification, are permitted provided that the following conditions
-//are met:
-
-// * Redistributions of source code must retain the above copyright
-//   notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-// * Neither the name of Willow Garage, Inc. nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-
-//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-//"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-//LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-//FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-//COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-//INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-//LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-//CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-//LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-//ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-//POSSIBILITY OF SUCH DAMAGE.
+/* Author: Sachin Chitta */
 
 #include <angles/angles.h>
-#include <pr2_arm_kinematics/pr2_arm_ik.h>
+#include <moveit/pr2_arm_kinematics/pr2_arm_ik.h>
 
 /**** List of angles (for reference) *******
       th1 = shoulder/turret pan
       th2 = shoulder/turret lift/pitch
       th3 = shoulder/turret roll
       th4 = elbow pitch
-      th5 = elbow roll 
+      th5 = elbow roll
       th6 = wrist pitch
-      th7 = wrist roll 
+      th7 = wrist roll
 *****/
 using namespace angles;
 using namespace pr2_arm_kinematics;
@@ -56,10 +60,15 @@ bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name
   boost::shared_ptr<const urdf::Link> link = robot_model.getLink(tip_name);
   while(link && num_joints < 7)
   {
-    boost::shared_ptr<const urdf::Joint> joint = robot_model.getJoint(link->parent_joint->name);
+    boost::shared_ptr<const urdf::Joint> joint;
+    if (link->parent_joint)
+      joint = robot_model.getJoint(link->parent_joint->name);
     if(!joint)
     {
-      ROS_ERROR("Could not find joint: %s",link->parent_joint->name.c_str());
+      if (link->parent_joint)
+        ROS_ERROR("Could not find joint: %s",link->parent_joint->name.c_str());
+      else
+        ROS_ERROR("Link %s has no parent joint",link->name.c_str());
       return false;
     }
     if(joint->type != urdf::Joint::UNKNOWN && joint->type != urdf::Joint::FIXED)
@@ -69,8 +78,25 @@ bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name
       ROS_DEBUG("Joint axis: %d, %f, %f, %f",6-num_joints,joint->axis.x,joint->axis.y,joint->axis.z);
       if(joint->type != urdf::Joint::CONTINUOUS)
       {
-        min_angles_.push_back(joint->safety->soft_lower_limit);
-        max_angles_.push_back(joint->safety->soft_upper_limit);
+        if (joint->safety)
+        {
+          min_angles_.push_back(joint->safety->soft_lower_limit);
+          max_angles_.push_back(joint->safety->soft_upper_limit);
+        }
+        else
+        {
+          if (joint->limits)
+          {
+            min_angles_.push_back(joint->limits->lower);
+            max_angles_.push_back(joint->limits->upper);
+          }
+          else
+          {
+            min_angles_.push_back(0.0);
+            max_angles_.push_back(0.0);
+            ROS_WARN("No joint limits or joint '%s'",joint->name.c_str());
+          }
+        }
         continuous_joint_.push_back(false);
       }
       else
@@ -83,7 +109,7 @@ bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name
       num_joints++;
     }
     link = robot_model.getLink(link->getParent()->name);
-  } 
+  }
 
   solver_info_.link_names.push_back(tip_name);
 
@@ -122,17 +148,28 @@ bool PR2ArmIK::init(const urdf::Model &robot_model, const std::string &root_name
   return true;
 }
 
-void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, kinematics_msgs::KinematicSolverInfo &info)
+void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, moveit_msgs::KinematicSolverInfo &info)
 {
-  arm_navigation_msgs::JointLimits limit;
+  moveit_msgs::JointLimits limit;
   info.joint_names.push_back(joint->name);//Joints are coming in reverse order
-  limit.min_position = joint->safety->soft_lower_limit;
-  limit.max_position = joint->safety->soft_upper_limit;
+
   if(joint->type != urdf::Joint::CONTINUOUS)
   {
-    limit.min_position = joint->safety->soft_lower_limit;
-    limit.max_position = joint->safety->soft_upper_limit;
-    limit.has_position_limits = true;
+    if (joint->safety)
+    {
+      limit.min_position = joint->safety->soft_lower_limit;
+      limit.max_position = joint->safety->soft_upper_limit;
+      limit.has_position_limits = true;
+    }
+    else
+      if (joint->limits)
+      {
+        limit.min_position = joint->limits->lower;
+        limit.max_position = joint->limits->upper;
+        limit.has_position_limits = true;
+      }
+      else
+        limit.has_position_limits = false;
   }
   else
   {
@@ -140,23 +177,30 @@ void PR2ArmIK::addJointToChainInfo(boost::shared_ptr<const urdf::Joint> joint, k
     limit.max_position = M_PI;
     limit.has_position_limits = false;
   }
-  limit.max_velocity = joint->limits->velocity;
-  limit.has_velocity_limits = 1;
+  if (joint->limits)
+  {
+    limit.max_velocity = joint->limits->velocity;
+    limit.has_velocity_limits = 1;
+  }
+  else
+    limit.has_velocity_limits = 0;
   info.limits.push_back(limit);
 }
 
-void PR2ArmIK::getSolverInfo(kinematics_msgs::KinematicSolverInfo &info)
+void PR2ArmIK::getSolverInfo(moveit_msgs::KinematicSolverInfo &info)
 {
   info = solver_info_;
 }
 
 
-void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t1_in, std::vector<std::vector<double> > &solution)
+void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t1_in, std::vector<std::vector<double> > &solution) const
 {
 //t1 = shoulder/turret pan is specified
 //  solution_ik_.resize(0);
-
+  std::vector<double> solution_ik(NUM_JOINTS_ARM7DOF,0.0);
   Eigen::Matrix4f g = g_in;
+  Eigen::Matrix4f gf_local = home_inv_;
+  Eigen::Matrix4f grhs_local = home_inv_;
 //First bring everything into the arm frame
   g(0,3) = g_in(0,3) - torso_shoulder_offset_x_;
   g(1,3) = g_in(1,3) - torso_shoulder_offset_y_;
@@ -170,7 +214,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
   double cost1, cost2, cost3, cost4;
   double sint1, sint2, sint3, sint4;
 
-  gf_ = g*home_inv_;
+  gf_local = g*home_inv_;
 
   cost1 = cos(t1);
   sint1 = sin(t1);
@@ -179,7 +223,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 
   double at(0), bt(0), ct(0);
 
-  double theta2[2],theta3[2],theta4[2],theta5[2],theta6[4],theta7[2]; 
+  double theta2[2],theta3[2],theta4[2],theta5[2],theta6[4],theta7[2];
 
   double sopx = shoulder_upperarm_offset_*cost1;
   double sopy = shoulder_upperarm_offset_*sint1;
@@ -204,7 +248,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
     return;
 
   double acos_angle = acos(acosTerm);
- 
+
   theta4[0] = acos_angle;
   theta4[1] = -acos_angle;
 
@@ -242,7 +286,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 
 
 #ifdef DEBUG
-      std::cout << "t2 " << t2 << std::endl; 
+      std::cout << "t2 " << t2 << std::endl;
 #endif
       sint2 = sin(t2);
       cost2 = cos(t2);
@@ -254,7 +298,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
         continue;
 
       for(int kk =0; kk < 2; kk++)
-      {           
+      {
         t3 = theta3[kk];
 
         if(!checkJointLimits(angles::normalize_angle(t3),2))
@@ -263,7 +307,7 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
         sint3 = sin(t3);
         cost3 = cos(t3);
 #ifdef DEBUG
-        std::cout << "t3 " << t3 << std::endl; 
+        std::cout << "t3 " << t3 << std::endl;
 #endif
         if(fabs((shoulder_upperarm_offset_-shoulder_elbow_offset_+(shoulder_elbow_offset_-shoulder_wrist_offset_)*cost4)*sint2+(shoulder_elbow_offset_-shoulder_wrist_offset_)*cost2*cost3*sint4-z) > IK_EPS )
           continue;
@@ -271,27 +315,27 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
         if(fabs((shoulder_elbow_offset_-shoulder_wrist_offset_)*sint1*sint3*sint4+cost1*(shoulder_upperarm_offset_+cost2*(-shoulder_upperarm_offset_+shoulder_elbow_offset_+(-shoulder_elbow_offset_+shoulder_wrist_offset_)*cost4)+(shoulder_elbow_offset_-shoulder_wrist_offset_)*cost3*sint2*sint4) - x) > IK_EPS)
           continue;
 
-        grhs_(0,0) = cost4*(gf_(0,0)*cost1*cost2+gf_(1,0)*cost2*sint1-gf_(2,0)*sint2)-(gf_(2,0)*cost2*cost3 + cost3*(gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2 + (-(gf_(1,0)*cost1) + gf_(0,0)*sint1)*sint3)*sint4;
+        grhs_local(0,0) = cost4*(gf_local(0,0)*cost1*cost2+gf_local(1,0)*cost2*sint1-gf_local(2,0)*sint2)-(gf_local(2,0)*cost2*cost3 + cost3*(gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2 + (-(gf_local(1,0)*cost1) + gf_local(0,0)*sint1)*sint3)*sint4;
 
-        grhs_(0,1) = cost4*(gf_(0,1)*cost1*cost2 + gf_(1,1)*cost2*sint1 - gf_(2,1)*sint2) - (gf_(2,1)*cost2*cost3 + cost3*(gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2 + (-(gf_(1,1)*cost1) + gf_(0,1)*sint1)*sint3)*sint4;
+        grhs_local(0,1) = cost4*(gf_local(0,1)*cost1*cost2 + gf_local(1,1)*cost2*sint1 - gf_local(2,1)*sint2) - (gf_local(2,1)*cost2*cost3 + cost3*(gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2 + (-(gf_local(1,1)*cost1) + gf_local(0,1)*sint1)*sint3)*sint4;
 
-        grhs_(0,2) = cost4*(gf_(0,2)*cost1*cost2 + gf_(1,2)*cost2*sint1 - gf_(2,2)*sint2) - (gf_(2,2)*cost2*cost3 + cost3*(gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2 + (-(gf_(1,2)*cost1) + gf_(0,2)*sint1)*sint3)*sint4;
+        grhs_local(0,2) = cost4*(gf_local(0,2)*cost1*cost2 + gf_local(1,2)*cost2*sint1 - gf_local(2,2)*sint2) - (gf_local(2,2)*cost2*cost3 + cost3*(gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2 + (-(gf_local(1,2)*cost1) + gf_local(0,2)*sint1)*sint3)*sint4;
 
-        grhs_(1,0) = cost3*(gf_(1,0)*cost1 - gf_(0,0)*sint1) + gf_(2,0)*cost2*sint3 + (gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2*sint3;
+        grhs_local(1,0) = cost3*(gf_local(1,0)*cost1 - gf_local(0,0)*sint1) + gf_local(2,0)*cost2*sint3 + (gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2*sint3;
 
-        grhs_(1,1) = cost3*(gf_(1,1)*cost1 - gf_(0,1)*sint1) + gf_(2,1)*cost2*sint3 + (gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2*sint3;
+        grhs_local(1,1) = cost3*(gf_local(1,1)*cost1 - gf_local(0,1)*sint1) + gf_local(2,1)*cost2*sint3 + (gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2*sint3;
 
-        grhs_(1,2) = cost3*(gf_(1,2)*cost1 - gf_(0,2)*sint1) + gf_(2,2)*cost2*sint3 + (gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2*sint3;
+        grhs_local(1,2) = cost3*(gf_local(1,2)*cost1 - gf_local(0,2)*sint1) + gf_local(2,2)*cost2*sint3 + (gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2*sint3;
 
-        grhs_(2,0) = cost4*(gf_(2,0)*cost2*cost3 + cost3*(gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2 + (-(gf_(1,0)*cost1) + gf_(0,0)*sint1)*sint3) + (gf_(0,0)*cost1*cost2 + gf_(1,0)*cost2*sint1 - gf_(2,0)*sint2)*sint4;
+        grhs_local(2,0) = cost4*(gf_local(2,0)*cost2*cost3 + cost3*(gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2 + (-(gf_local(1,0)*cost1) + gf_local(0,0)*sint1)*sint3) + (gf_local(0,0)*cost1*cost2 + gf_local(1,0)*cost2*sint1 - gf_local(2,0)*sint2)*sint4;
 
-        grhs_(2,1) = cost4*(gf_(2,1)*cost2*cost3 + cost3*(gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2 + (-(gf_(1,1)*cost1) + gf_(0,1)*sint1)*sint3) + (gf_(0,1)*cost1*cost2 + gf_(1,1)*cost2*sint1 - gf_(2,1)*sint2)*sint4;
+        grhs_local(2,1) = cost4*(gf_local(2,1)*cost2*cost3 + cost3*(gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2 + (-(gf_local(1,1)*cost1) + gf_local(0,1)*sint1)*sint3) + (gf_local(0,1)*cost1*cost2 + gf_local(1,1)*cost2*sint1 - gf_local(2,1)*sint2)*sint4;
 
-        grhs_(2,2) = cost4*(gf_(2,2)*cost2*cost3 + cost3*(gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2 + (-(gf_(1,2)*cost1) + gf_(0,2)*sint1)*sint3) + (gf_(0,2)*cost1*cost2 + gf_(1,2)*cost2*sint1 - gf_(2,2)*sint2)*sint4;
+        grhs_local(2,2) = cost4*(gf_local(2,2)*cost2*cost3 + cost3*(gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2 + (-(gf_local(1,2)*cost1) + gf_local(0,2)*sint1)*sint3) + (gf_local(0,2)*cost1*cost2 + gf_local(1,2)*cost2*sint1 - gf_local(2,2)*sint2)*sint4;
 
 
-        double val1 = sqrt(grhs_(0,1)*grhs_(0,1)+grhs_(0,2)*grhs_(0,2));
-        double val2 = grhs_(0,0);
+        double val1 = sqrt(grhs_local(0,1)*grhs_local(0,1)+grhs_local(0,2)*grhs_local(0,2));
+        double val2 = grhs_local(0,0);
 
         theta6[0] = atan2(val1,val2);
         theta6[1] = atan2(-val1,val2);
@@ -308,21 +352,21 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 #ifdef DEBUG
           std::cout << "t6 " << t6 << std::endl;
 #endif
-          if(fabs(cos(t6) - grhs_(0,0)) > IK_EPS)
+          if(fabs(cos(t6) - grhs_local(0,0)) > IK_EPS)
             continue;
 
           if(fabs(sin(t6)) < IK_EPS)
           {
             //                std::cout << "Singularity" << std::endl;
-            theta5[0] = acos(grhs_(1,1))/2.0;
+            theta5[0] = acos(grhs_local(1,1))/2.0;
             theta7[0] = theta7[0];
             theta7[1] = M_PI+theta7[0];
             theta5[1] = theta7[1];
           }
           else
           {
-            theta7[0] = atan2(grhs_(0,1),grhs_(0,2));
-            theta5[0] = atan2(grhs_(1,0),-grhs_(2,0));
+            theta7[0] = atan2(grhs_local(0,1),grhs_local(0,2));
+            theta5[0] = atan2(grhs_local(1,0),-grhs_local(2,0));
             theta7[1] = M_PI+theta7[0];
             theta5[1] = M_PI+theta5[0];
           }
@@ -347,21 +391,21 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 #ifdef DEBUG
             std::cout << "t5" << t5 << std::endl;
             std::cout << "t7" << t7 << std::endl;
-#endif      
-            if(fabs(sin(t6)*sin(t7)-grhs_(0,1)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs_(0,2)) > IK_EPS)
+#endif
+            if(fabs(sin(t6)*sin(t7)-grhs_local(0,1)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs_local(0,2)) > IK_EPS)
               continue;
 
-            solution_[0] = normalize_angle(t1)*angle_multipliers_[0];
-            solution_[1] = normalize_angle(t2)*angle_multipliers_[1];
-            solution_[2] = normalize_angle(t3)*angle_multipliers_[2];
-            solution_[3] = normalize_angle(t4)*angle_multipliers_[3];
-            solution_[4] = normalize_angle(t5)*angle_multipliers_[4];
-            solution_[5] = normalize_angle(t6)*angle_multipliers_[5];
-            solution_[6] = normalize_angle(t7)*angle_multipliers_[6];
-            solution.push_back(solution_);
+            solution_ik[0] = normalize_angle(t1)*angle_multipliers_[0];
+            solution_ik[1] = normalize_angle(t2)*angle_multipliers_[1];
+            solution_ik[2] = normalize_angle(t3)*angle_multipliers_[2];
+            solution_ik[3] = normalize_angle(t4)*angle_multipliers_[3];
+            solution_ik[4] = normalize_angle(t5)*angle_multipliers_[4];
+            solution_ik[5] = normalize_angle(t6)*angle_multipliers_[5];
+            solution_ik[6] = normalize_angle(t7)*angle_multipliers_[6];
+            solution.push_back(solution_ik);
 
 #ifdef DEBUG
-            std::cout << "SOLN " << solution_[0] << " " << solution_[1] << " " <<  solution_[2] << " " << solution_[3] <<  " " << solution_[4] << " " << solution_[5] <<  " " << solution_[6] << std::endl << std::endl;
+            std::cout << "SOLN " << solution_ik[0] << " " << solution_ik[1] << " " <<  solution_ik[2] << " " << solution_ik[3] <<  " " << solution_ik[4] << " " << solution_ik[5] <<  " " << solution_ik[6] << std::endl << std::endl;
 #endif
           }
         }
@@ -371,8 +415,9 @@ void PR2ArmIK::computeIKShoulderPan(const Eigen::Matrix4f &g_in, const double &t
 }
 
 
-void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &t3, std::vector<std::vector<double> > &solution)
+void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &t3, std::vector<std::vector<double> > &solution) const
 {
+  std::vector<double> solution_ik(NUM_JOINTS_ARM7DOF,0.0);
   //  ROS_INFO(" ");
   // solution_ik_.clear();
   //  ROS_INFO("Solution IK size: %d",solution_ik_.size());
@@ -384,6 +429,8 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
   //    solution_ik_.resize(0);
 //t3 = shoulder/turret roll is specified
   Eigen::Matrix4f g = g_in;
+  Eigen::Matrix4f gf_local = home_inv_;
+  Eigen::Matrix4f grhs_local = home_inv_;
 //First bring everything into the arm frame
   g(0,3) = g_in(0,3) - torso_shoulder_offset_x_;
   g(1,3) = g_in(1,3) - torso_shoulder_offset_y_;
@@ -399,7 +446,7 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
   double cost1, cost2, cost3, cost4;
   double sint1, sint2, sint3, sint4;
 
-  gf_ = g*home_inv_;
+  gf_local = g*home_inv_;
 
   cost3 = cos(t3);
   sint3 = sin(t3);
@@ -481,7 +528,7 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
       }
 
       for(int kk =0; kk < 2; kk++)
-      {           
+      {
         t1 = theta1[kk];
 #ifdef DEBUG
         std::cout << "t1 " << t1 << std::endl;
@@ -513,25 +560,23 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 #endif
           continue;
         }
-        grhs_(0,0) = cost4*(gf_(0,0)*cost1*cost2+gf_(1,0)*cost2*sint1-gf_(2,0)*sint2)-(gf_(2,0)*cost2*cost3 + cost3*(gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2 + (-(gf_(1,0)*cost1) + gf_(0,0)*sint1)*sint3)*sint4;
+        grhs_local(0,0) = cost4*(gf_local(0,0)*cost1*cost2+gf_local(1,0)*cost2*sint1-gf_local(2,0)*sint2)-(gf_local(2,0)*cost2*cost3 + cost3*(gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2 + (-(gf_local(1,0)*cost1) + gf_local(0,0)*sint1)*sint3)*sint4;
 
-        grhs_(0,1) = cost4*(gf_(0,1)*cost1*cost2 + gf_(1,1)*cost2*sint1 - gf_(2,1)*sint2) - (gf_(2,1)*cost2*cost3 + cost3*(gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2 + (-(gf_(1,1)*cost1) + gf_(0,1)*sint1)*sint3)*sint4;
+        grhs_local(0,1) = cost4*(gf_local(0,1)*cost1*cost2 + gf_local(1,1)*cost2*sint1 - gf_local(2,1)*sint2) - (gf_local(2,1)*cost2*cost3 + cost3*(gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2 + (-(gf_local(1,1)*cost1) + gf_local(0,1)*sint1)*sint3)*sint4;
 
-        grhs_(0,2) = cost4*(gf_(0,2)*cost1*cost2 + gf_(1,2)*cost2*sint1 - gf_(2,2)*sint2) - (gf_(2,2)*cost2*cost3 + cost3*(gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2 + (-(gf_(1,2)*cost1) + gf_(0,2)*sint1)*sint3)*sint4;
+        grhs_local(0,2) = cost4*(gf_local(0,2)*cost1*cost2 + gf_local(1,2)*cost2*sint1 - gf_local(2,2)*sint2) - (gf_local(2,2)*cost2*cost3 + cost3*(gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2 + (-(gf_local(1,2)*cost1) + gf_local(0,2)*sint1)*sint3)*sint4;
 
-        grhs_(1,0) = cost3*(gf_(1,0)*cost1 - gf_(0,0)*sint1) + gf_(2,0)*cost2*sint3 + (gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2*sint3;
+        grhs_local(1,0) = cost3*(gf_local(1,0)*cost1 - gf_local(0,0)*sint1) + gf_local(2,0)*cost2*sint3 + (gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2*sint3;
 
-        grhs_(1,1) = cost3*(gf_(1,1)*cost1 - gf_(0,1)*sint1) + gf_(2,1)*cost2*sint3 + (gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2*sint3;
+        grhs_local(1,1) = cost3*(gf_local(1,1)*cost1 - gf_local(0,1)*sint1) + gf_local(2,1)*cost2*sint3 + (gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2*sint3;
 
-        grhs_(1,2) = cost3*(gf_(1,2)*cost1 - gf_(0,2)*sint1) + gf_(2,2)*cost2*sint3 + (gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2*sint3;
+        grhs_local(1,2) = cost3*(gf_local(1,2)*cost1 - gf_local(0,2)*sint1) + gf_local(2,2)*cost2*sint3 + (gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2*sint3;
 
-        grhs_(2,0) = cost4*(gf_(2,0)*cost2*cost3 + cost3*(gf_(0,0)*cost1 + gf_(1,0)*sint1)*sint2 + (-(gf_(1,0)*cost1) + gf_(0,0)*sint1)*sint3) + (gf_(0,0)*cost1*cost2 + gf_(1,0)*cost2*sint1 - gf_(2,0)*sint2)*sint4;
+        grhs_local(2,0) = cost4*(gf_local(2,0)*cost2*cost3 + cost3*(gf_local(0,0)*cost1 + gf_local(1,0)*sint1)*sint2 + (-(gf_local(1,0)*cost1) + gf_local(0,0)*sint1)*sint3) + (gf_local(0,0)*cost1*cost2 + gf_local(1,0)*cost2*sint1 - gf_local(2,0)*sint2)*sint4;
 
-        grhs_(2,1) = cost4*(gf_(2,1)*cost2*cost3 + cost3*(gf_(0,1)*cost1 + gf_(1,1)*sint1)*sint2 + (-(gf_(1,1)*cost1) + gf_(0,1)*sint1)*sint3) + (gf_(0,1)*cost1*cost2 + gf_(1,1)*cost2*sint1 - gf_(2,1)*sint2)*sint4;
+        grhs_local(2,1) = cost4*(gf_local(2,1)*cost2*cost3 + cost3*(gf_local(0,1)*cost1 + gf_local(1,1)*sint1)*sint2 + (-(gf_local(1,1)*cost1) + gf_local(0,1)*sint1)*sint3) + (gf_local(0,1)*cost1*cost2 + gf_local(1,1)*cost2*sint1 - gf_local(2,1)*sint2)*sint4;
 
-        grhs_(2,2) = cost4*(gf_(2,2)*cost2*cost3 + cost3*(gf_(0,2)*cost1 + gf_(1,2)*sint1)*sint2 + (-(gf_(1,2)*cost1) + gf_(0,2)*sint1)*sint3) + (gf_(0,2)*cost1*cost2 + gf_(1,2)*cost2*sint1 - gf_(2,2)*sint2)*sint4;
-
-
+        grhs_local(2,2) = cost4*(gf_local(2,2)*cost2*cost3 + cost3*(gf_local(0,2)*cost1 + gf_local(1,2)*sint1)*sint2 + (-(gf_local(1,2)*cost1) + gf_local(0,2)*sint1)*sint3) + (gf_local(0,2)*cost1*cost2 + gf_local(1,2)*cost2*sint1 - gf_local(2,2)*sint2)*sint4;
 
 
 
@@ -539,8 +584,10 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 
 
 
-        double val1 = sqrt(grhs_(0,1)*grhs_(0,1)+grhs_(0,2)*grhs_(0,2));
-        double val2 = grhs_(0,0);
+
+
+        double val1 = sqrt(grhs_local(0,1)*grhs_local(0,1)+grhs_local(0,2)*grhs_local(0,2));
+        double val2 = grhs_local(0,0);
 
         theta6[0] = atan2(val1,val2);
         theta6[1] = atan2(-val1,val2);
@@ -557,21 +604,21 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
           }
 
 
-          if(fabs(cos(t6) - grhs_(0,0)) > IK_EPS)
+          if(fabs(cos(t6) - grhs_local(0,0)) > IK_EPS)
             continue;
 
           if(fabs(sin(t6)) < IK_EPS)
           {
             //                std::cout << "Singularity" << std::endl;
-            theta5[0] = acos(grhs_(1,1))/2.0;
+            theta5[0] = acos(grhs_local(1,1))/2.0;
             theta7[0] = theta5[0];
 //            theta7[1] = M_PI+theta7[0];
 //            theta5[1] = theta7[1];
           }
           else
           {
-            theta7[0] = atan2(grhs_(0,1)/sin(t6),grhs_(0,2)/sin(t6));
-            theta5[0] = atan2(grhs_(1,0)/sin(t6),-grhs_(2,0)/sin(t6));
+            theta7[0] = atan2(grhs_local(0,1)/sin(t6),grhs_local(0,2)/sin(t6));
+            theta5[0] = atan2(grhs_local(1,0)/sin(t6),-grhs_local(2,0)/sin(t6));
 //            theta7[1] = M_PI+theta7[0];
 //            theta5[1] = M_PI+theta5[0];
           }
@@ -593,8 +640,8 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 #ifdef DEBUG
             std::cout << "t5 " << t5 << std::endl;
             std::cout << "t7 " << t7 << std::endl;
-#endif      
-            //           if(fabs(sin(t6)*sin(t7)-grhs_(0,1)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs_(0,2)) > IK_EPS)
+#endif
+            //           if(fabs(sin(t6)*sin(t7)-grhs_local(0,1)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs_local(0,2)) > IK_EPS)
             //  continue;
 
 #ifdef DEBUG
@@ -608,16 +655,16 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 #endif
 
 
-            solution_[0] = normalize_angle(t1*angle_multipliers_[0]);
-            solution_[1] = normalize_angle(t2*angle_multipliers_[1]);
-            solution_[2] = t3*angle_multipliers_[2];
-            solution_[3] = normalize_angle(t4*angle_multipliers_[3]);
-            solution_[4] = normalize_angle(t5*angle_multipliers_[4]);
-            solution_[5] = normalize_angle(t6*angle_multipliers_[5]);
-            solution_[6] = normalize_angle(t7*angle_multipliers_[6]);
-            solution.push_back(solution_);
+            solution_ik[0] = normalize_angle(t1*angle_multipliers_[0]);
+            solution_ik[1] = normalize_angle(t2*angle_multipliers_[1]);
+            solution_ik[2] = t3*angle_multipliers_[2];
+            solution_ik[3] = normalize_angle(t4*angle_multipliers_[3]);
+            solution_ik[4] = normalize_angle(t5*angle_multipliers_[4]);
+            solution_ik[5] = normalize_angle(t6*angle_multipliers_[5]);
+            solution_ik[6] = normalize_angle(t7*angle_multipliers_[6]);
+            solution.push_back(solution_ik);
 #ifdef DEBUG
-            std::cout << "SOLN " << solution_[0] << " " << solution_[1] << " " <<  solution_[2] << " " << solution_[3] <<  " " << solution_[4] << " " << solution_[5] <<  " " << solution_[6] << std::endl << std::endl;
+            std::cout << "SOLN " << solution_ik[0] << " " << solution_ik[1] << " " <<  solution_ik[2] << " " << solution_ik[3] <<  " " << solution_ik[4] << " " << solution_ik[5] <<  " " << solution_ik[6] << std::endl << std::endl;
 #endif
           }
         }
@@ -627,7 +674,7 @@ void PR2ArmIK::computeIKShoulderRoll(const Eigen::Matrix4f &g_in, const double &
 }
 
 
-bool PR2ArmIK::checkJointLimits(const std::vector<double> &joint_values)
+bool PR2ArmIK::checkJointLimits(const std::vector<double> &joint_values) const
 {
   for(int i=0; i<NUM_JOINTS_ARM7DOF; i++)
   {
@@ -639,7 +686,7 @@ bool PR2ArmIK::checkJointLimits(const std::vector<double> &joint_values)
   return true;
 }
 
-bool  PR2ArmIK::checkJointLimits(const double &joint_value, const int &joint_num)
+bool  PR2ArmIK::checkJointLimits(const double &joint_value, const int &joint_num) const
 {
   double jv;
   if(continuous_joint_[joint_num])

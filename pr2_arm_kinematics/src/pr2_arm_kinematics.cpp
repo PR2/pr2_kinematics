@@ -1,35 +1,38 @@
-/*
- * Copyright (c) 2008, Willow Garage, Inc.
- * All rights reserved.
+/*********************************************************************
+ * Software License Agreement (BSD License)
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Willow Garage, Inc. nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
-/*
- * Author: Sachin Chitta
- */
+/* Author: Sachin Chitta */
 
 #include <pr2_arm_kinematics/pr2_arm_kinematics.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -139,17 +142,17 @@ bool PR2ArmKinematics::isActive()
   return false;
 }
 
-bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &request, 
+bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &request,
                                      kinematics_msgs::GetPositionIK::Response &response)
 {
   if(!active_)
   {
     ROS_ERROR("IK service not active");
-    return true;
+    return false;
   }
 
   if(!checkIKService(request,response,ik_solver_info_))
-    return true;
+    return false;
 
   geometry_msgs::PoseStamped pose_msg_in = request.ik_request.pose_stamped;
   geometry_msgs::PoseStamped pose_msg_out;
@@ -163,18 +166,18 @@ bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &re
   } else {
     ROS_WARN_STREAM("No tf listener.  Can't transform anything");
     response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
-    return true;
+    return false;
   }
   request.ik_request.pose_stamped = pose_msg_out;
   return getPositionIKHelper(request, response);
 }
 
 //this assumes that everything has been checked and is in the correct frame
-bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Request &request, 
+bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Request &request,
                                            kinematics_msgs::GetPositionIK::Response &response)
 {
   KDL::Frame pose_desired;
-  tf::poseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
+  tf::PoseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
 
   //Do the IK
   KDL::JntArray jnt_pos_in;
@@ -192,7 +195,7 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
       ROS_ERROR("i: %d, No joint index for %s",i,request.ik_request.ik_seed_state.joint_state.name[i].c_str());
     }
   }
-  
+
   int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
                                                      pose_desired,
                                                      jnt_pos_out,
@@ -203,7 +206,7 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
     response.error_code.val = response.error_code.NO_IK_SOLUTION;
 
   response.solution.joint_state.header = request.ik_request.pose_stamped.header;
-  
+
   if(ik_valid >= 0)
   {
     response.solution.joint_state.name = ik_solver_info_.joint_names;
@@ -218,46 +221,46 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
   }
   else
   {
-    ROS_DEBUG("An IK solution could not be found");   
-    return true;
+    ROS_DEBUG("An IK solution could not be found");
+    return false;
   }
 }
 
-bool PR2ArmKinematics::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+bool PR2ArmKinematics::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request,
                                        kinematics_msgs::GetKinematicSolverInfo::Response &response)
 {
-  if(!active_)
+  if (active_)
   {
-    ROS_ERROR("IK node not active");
+    response.kinematic_solver_info = ik_solver_info_;
     return true;
   }
-  response.kinematic_solver_info = ik_solver_info_;
-  return true;
+  ROS_ERROR("IK node not active");
+  return false;
 }
 
-bool PR2ArmKinematics::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request, 
+bool PR2ArmKinematics::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request,
                                        kinematics_msgs::GetKinematicSolverInfo::Response &response)
 {
-  if(!active_)
+  if(active_)
   {
-    ROS_ERROR("IK node not active");
+    response.kinematic_solver_info = fk_solver_info_;
     return true;
   }
-  response.kinematic_solver_info = fk_solver_info_;
-  return true;
+  ROS_ERROR("IK node not active");
+  return false;
 }
 
-bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &request, 
+bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &request,
                                      kinematics_msgs::GetPositionFK::Response &response)
 {
   if(!active_)
   {
     ROS_ERROR("FK service not active");
-    return true;
+    return false;
   }
 
   if(!checkFKService(request,response,fk_solver_info_))
-    return true;
+    return false;
 
   KDL::Frame p_out;
   KDL::JntArray jnt_pos_in;
@@ -265,7 +268,7 @@ bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &re
   tf::Stamped<tf::Pose> tf_pose;
 
   jnt_pos_in.resize(dimension_);
-  for(int i=0; i < (int) request.robot_state.joint_state.position.size(); i++) 
+  for(int i=0; i < (int) request.robot_state.joint_state.position.size(); i++)
   {
     int tmp_index = getJointIndex(request.robot_state.joint_state.name[i],fk_solver_info_);
     if(tmp_index >=0)
@@ -275,7 +278,6 @@ bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &re
   response.pose_stamped.resize(request.fk_link_names.size());
   response.fk_link_names.resize(request.fk_link_names.size());
 
-  bool valid = true;
   for(unsigned int i=0; i < request.fk_link_names.size(); i++)
   {
     ROS_DEBUG("End effector index: %d",pr2_arm_kinematics::getKDLSegmentIndex(kdl_chain_,request.fk_link_names[i]));
@@ -287,8 +289,8 @@ bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &re
       tf::PoseKDLToTF(p_out,tf_pose);
       tf::poseStampedTFToMsg(tf_pose,pose);
       if(!transformPose(request.header.frame_id, pose, response.pose_stamped[i])) {
-	response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
-	return false;
+    response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
+    return false;
       }
       response.fk_link_names[i] = request.fk_link_names[i];
       response.error_code.val = response.error_code.SUCCESS;
@@ -297,14 +299,14 @@ bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &re
     {
       ROS_ERROR("Could not compute FK for %s",request.fk_link_names[i].c_str());
       response.error_code.val = response.error_code.NO_FK_SOLUTION;
-      valid = false;
+      return false;
     }
   }
   return true;
 }
 bool PR2ArmKinematics::transformPose(const std::string& des_frame,
-				     const geometry_msgs::PoseStamped& pose_in,
-				     geometry_msgs::PoseStamped& pose_out)
+                                     const geometry_msgs::PoseStamped& pose_in,
+                                     geometry_msgs::PoseStamped& pose_out)
 {
   if(tf_ != NULL) {
     try {

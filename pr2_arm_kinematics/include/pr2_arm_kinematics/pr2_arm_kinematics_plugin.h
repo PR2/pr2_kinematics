@@ -55,7 +55,9 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <kinematics_base/kinematics_base.h>
+// Deprecated in Hydro, no longer using arm_navigation.
+// #include <kinematics_base/kinematics_base.h>
+#include <moveit/kinematics_base/kinematics_base.h>
 
 namespace pr2_arm_kinematics
 {
