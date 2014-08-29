@@ -34,8 +34,8 @@
 
 /* Author: Sachin Chitta */
 
-#include <moveit/pr2_arm_kinematics/pr2_arm_kinematics_utils.h>
-#include <moveit/pr2_arm_kinematics/pr2_arm_kinematics_constants.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_utils.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_constants.h>
 
 namespace pr2_arm_kinematics
 {

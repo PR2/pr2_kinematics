@@ -10,6 +10,9 @@ find_package(Boost REQUIRED thread)
 # TODO: remove all from COMPONENTS that are not catkin packages.
 find_package(catkin REQUIRED COMPONENTS roscpp angles tf_conversions urdf geometry_msgs kdl_parser kinematics_msgs pluginlib moveit_core eigen)
 
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
 # cmake_minimum_required(VERSION 2.4.6)
@@ -61,8 +64,12 @@ add_library(pr2_arm_kinematics_lib
   src/pr2_arm_kinematics_plugin.cpp
 )
 
+
+
 add_executable(pr2_arm_kinematics_node src/main.cpp)
-target_link_libraries(pr2_arm_kinematics_node pr2_arm_kinematics_lib)
+target_link_libraries(pr2_arm_kinematics_node pr2_arm_kinematics_lib ${catkin_LIBRARIES})
+
+target_link_libraries(pr2_arm_kinematics_lib ${catkin_LIBRARIES})
 
 #add_executable(ik_with_cost_test test/test_ik_with_cost.cpp)
 #target_link_libraries(ik_with_cost_test pr2_arm_ik)
@@ -103,6 +110,22 @@ generate_messages(
 catkin_package(
     DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser kinematics_msgs pluginlib kinematics_base eigen moveit_core
     CATKIN_DEPENDS # TODO
-    INCLUDE_DIRS # TODO include
+    INCLUDE_DIRS include# TODO include
     LIBRARIES # TODO
 )
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  PATTERN ".svn" EXCLUDE
+)
+
+install(TARGETS pr2_arm_kinematics_lib
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+

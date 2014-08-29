@@ -142,8 +142,8 @@ bool PR2ArmKinematics::isActive()
   return false;
 }
 
-bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &request,
-                                     kinematics_msgs::GetPositionIK::Response &response)
+bool PR2ArmKinematics::getPositionIK(moveit_msgs::GetPositionIK::Request &request,
+                                     moveit_msgs::GetPositionIK::Response &response)
 {
   if(!active_)
   {
@@ -173,8 +173,8 @@ bool PR2ArmKinematics::getPositionIK(kinematics_msgs::GetPositionIK::Request &re
 }
 
 //this assumes that everything has been checked and is in the correct frame
-bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Request &request,
-                                           kinematics_msgs::GetPositionIK::Response &response)
+bool PR2ArmKinematics::getPositionIKHelper(moveit_msgs::GetPositionIK::Request &request,
+                                           moveit_msgs::GetPositionIK::Response &response)
 {
   KDL::Frame pose_desired;
   tf::PoseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
@@ -185,21 +185,21 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
   jnt_pos_in.resize(dimension_);
   for(int i=0; i < dimension_; i++)
   {
-    int tmp_index = getJointIndex(request.ik_request.ik_seed_state.joint_state.name[i],ik_solver_info_);
+    int tmp_index = getJointIndex(request.ik_request.robot_state.joint_state.name[i],ik_solver_info_);
     if(tmp_index >=0)
     {
-      jnt_pos_in(tmp_index) = request.ik_request.ik_seed_state.joint_state.position[i];
+      jnt_pos_in(tmp_index) = request.ik_request.robot_state.joint_state.position[i];
     }
     else
     {
-      ROS_ERROR("i: %d, No joint index for %s",i,request.ik_request.ik_seed_state.joint_state.name[i].c_str());
+      ROS_ERROR("i: %d, No joint index for %s",i,request.ik_request.robot_state.joint_state.name[i].c_str());
     }
   }
 
   int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
                                                      pose_desired,
                                                      jnt_pos_out,
-                                                     request.timeout.toSec());
+                                                     request.ik_request.timeout.toSec());
   if(ik_valid == pr2_arm_kinematics::TIMED_OUT)
     response.error_code.val = response.error_code.TIMED_OUT;
   if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)
@@ -226,8 +226,8 @@ bool PR2ArmKinematics::getPositionIKHelper(kinematics_msgs::GetPositionIK::Reque
   }
 }
 
-bool PR2ArmKinematics::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request,
-                                       kinematics_msgs::GetKinematicSolverInfo::Response &response)
+bool PR2ArmKinematics::getIKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
+                                       moveit_msgs::GetKinematicSolverInfo::Response &response)
 {
   if (active_)
   {
@@ -238,8 +238,8 @@ bool PR2ArmKinematics::getIKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::
   return false;
 }
 
-bool PR2ArmKinematics::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::Request &request,
-                                       kinematics_msgs::GetKinematicSolverInfo::Response &response)
+bool PR2ArmKinematics::getFKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
+                                       moveit_msgs::GetKinematicSolverInfo::Response &response)
 {
   if(active_)
   {
@@ -250,8 +250,8 @@ bool PR2ArmKinematics::getFKSolverInfo(kinematics_msgs::GetKinematicSolverInfo::
   return false;
 }
 
-bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &request,
-                                     kinematics_msgs::GetPositionFK::Response &response)
+bool PR2ArmKinematics::getPositionFK(moveit_msgs::GetPositionFK::Request &request,
+                                     moveit_msgs::GetPositionFK::Response &response)
 {
   if(!active_)
   {
@@ -298,7 +298,7 @@ bool PR2ArmKinematics::getPositionFK(kinematics_msgs::GetPositionFK::Request &re
     else
     {
       ROS_ERROR("Could not compute FK for %s",request.fk_link_names[i].c_str());
-      response.error_code.val = response.error_code.NO_FK_SOLUTION;
+      response.error_code.val = response.error_code.NO_IK_SOLUTION;
       return false;
     }
   }

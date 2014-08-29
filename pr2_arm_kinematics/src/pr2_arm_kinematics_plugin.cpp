@@ -34,7 +34,7 @@
 
 /* Author: Sachin Chitta */
 
-#include <moveit/pr2_arm_kinematics/pr2_arm_kinematics_plugin.h>
+#include <pr2_arm_kinematics/pr2_arm_kinematics_plugin.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <kdl_parser/kdl_parser.hpp>
 #include <tf_conversions/tf_kdl.h>

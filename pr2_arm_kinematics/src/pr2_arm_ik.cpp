@@ -35,7 +35,7 @@
 /* Author: Sachin Chitta */
 
 #include <angles/angles.h>
-#include <moveit/pr2_arm_kinematics/pr2_arm_ik.h>
+#include <pr2_arm_kinematics/pr2_arm_ik.h>
 
 /**** List of angles (for reference) *******
       th1 = shoulder/turret pan

@@ -34,7 +34,7 @@
 
 /* Author: Sachin Chitta */
 
-#include <moveit/pr2_arm_kinematics/pr2_arm_ik_solver.h>
+#include <pr2_arm_kinematics/pr2_arm_ik_solver.h>
 
 using namespace Eigen;
 using namespace pr2_arm_kinematics;
