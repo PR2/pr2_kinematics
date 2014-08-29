@@ -117,6 +117,9 @@ catkin_package(
     LIBRARIES # TODO
 )
 
+install(FILES test_pr2_arm_ik.xml test_pr2_arm_ik_node.xml kinematics_plugins.xml
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".svn" EXCLUDE)
