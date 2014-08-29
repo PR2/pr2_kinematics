@@ -140,10 +140,13 @@ static const int TIMED_OUT = -2;
      * @param q_out The solution.
      * @param timeout The amount of time (in seconds) to spend looking for a solution.
      */
-    int CartToJntSearch(const KDL::JntArray& q_in,
-                        const KDL::Frame& p_in,
-                        KDL::JntArray &q_out,
-                        const double &timeout);
+   
+//  
+//  Undefined in pr2_arm_ik_solver.cpp, so commented out dash@clearpathrobotics.com
+ //int CartToJntSearch(const KDL::JntArray& q_in,
+ //                       const KDL::Frame& p_in,
+ //                       KDL::JntArray &q_out,
+ //                       const double &timeout);
 
      /**
      * @brief This method searches for and returns the closest solution to

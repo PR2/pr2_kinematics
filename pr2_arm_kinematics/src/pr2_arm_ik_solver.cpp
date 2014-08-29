@@ -231,7 +231,7 @@ int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in,
   return CartToJntSearch(q_in, p_in, q_out, timeout, true, consistency_limit, error_code, solution_callback);
 }
 
-int PR2ArmIKSolver:: CartToJntSearch(const KDL::JntArray& q_in,
+int PR2ArmIKSolver::CartToJntSearch(const KDL::JntArray& q_in,
                                      const KDL::Frame& p_in,
                                      KDL::JntArray &q_out,
                                      const double &timeout,

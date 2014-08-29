@@ -196,10 +196,12 @@ bool PR2ArmKinematics::getPositionIKHelper(moveit_msgs::GetPositionIK::Request &
     }
   }
 
+  std::vector<KDL::JntArray> jnt_array;
+  jnt_array.push_back(jnt_pos_out);
   int ik_valid = pr2_arm_ik_solver_->CartToJntSearch(jnt_pos_in,
                                                      pose_desired,
-                                                     jnt_pos_out,
-                                                     request.ik_request.timeout.toSec());
+                                                     jnt_array,
+                                                     (const double)(request.ik_request.timeout.toSec()));
   if(ik_valid == pr2_arm_kinematics::TIMED_OUT)
     response.error_code.val = response.error_code.TIMED_OUT;
   if(ik_valid == pr2_arm_kinematics::NO_IK_SOLUTION)

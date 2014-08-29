@@ -56,21 +56,24 @@ include_directories(${Boost_INCLUDE_DIRS})
 #add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+
+
+
 add_library(pr2_arm_kinematics_lib
   src/pr2_arm_ik.cpp
-  src/pr2_arm_kinematics_utils.cpp
   src/pr2_arm_ik_solver.cpp
+  src/pr2_arm_kinematics_utils.cpp
   src/pr2_arm_kinematics.cpp
   src/pr2_arm_kinematics_plugin.cpp
 )
 
 
 
+
 add_executable(pr2_arm_kinematics_node src/main.cpp)
 target_link_libraries(pr2_arm_kinematics_node pr2_arm_kinematics_lib ${catkin_LIBRARIES})
-
 target_link_libraries(pr2_arm_kinematics_lib ${catkin_LIBRARIES})
-
+ 
 #add_executable(ik_with_cost_test test/test_ik_with_cost.cpp)
 #target_link_libraries(ik_with_cost_test pr2_arm_ik)
 
@@ -121,11 +124,5 @@ install(DIRECTORY launch/
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   PATTERN ".svn" EXCLUDE
-)
-
-install(TARGETS pr2_arm_kinematics_lib
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
