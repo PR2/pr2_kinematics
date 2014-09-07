@@ -7,7 +7,6 @@
   <maintainer email="dash@clearpathrobotics.com">Devon Ash</maintainer>
   <license>TODO</license>
 
-  <build_depend>pr2_arm_kinematics</build_depend>
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>pr2_arm_kinematics</run_depend>
