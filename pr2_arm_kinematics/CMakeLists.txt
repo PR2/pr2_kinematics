@@ -8,7 +8,7 @@ find_package(Boost REQUIRED thread)
 
 # Load catkin and all dependencies required for this package
 # TODO: remove all from COMPONENTS that are not catkin packages.
-find_package(catkin REQUIRED COMPONENTS roscpp angles tf_conversions urdf geometry_msgs kdl_parser kinematics_msgs pluginlib moveit_core eigen)
+find_package(catkin REQUIRED COMPONENTS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib moveit_core eigen)
 
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -111,7 +111,7 @@ generate_messages(
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 # TODO: fill in what other packages will need to use this package
 catkin_package(
-    DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser kinematics_msgs pluginlib kinematics_base eigen moveit_core
+    DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib kinematics_base eigen moveit_core
     CATKIN_DEPENDS # TODO
     INCLUDE_DIRS include# TODO include
     LIBRARIES # TODO
