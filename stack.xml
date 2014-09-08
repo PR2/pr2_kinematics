@@ -1,6 +1,7 @@
 <stack>
   <description brief="pr2_kinematics">This stack contains an implementation of kinematics for the PR2 robot.</description>
   <author>Maintained by Sachin Chitta</author>
+  <maintainer email="dash@clearpathrobotics.com">Devon Ash</maintainer>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/pr2_kinematics</url>
