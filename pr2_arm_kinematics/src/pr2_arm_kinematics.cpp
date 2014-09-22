@@ -156,7 +156,6 @@ bool PR2ArmKinematics::getPositionIK(moveit_msgs::GetPositionIK::Request &reques
 
   geometry_msgs::PoseStamped pose_msg_in = request.ik_request.pose_stamped;
   geometry_msgs::PoseStamped pose_msg_out;
-
   if(tf_ != NULL) {
     if(!convertPoseToRootFrame(pose_msg_in,pose_msg_out,root_name_, *tf_))
     {
@@ -215,8 +214,8 @@ bool PR2ArmKinematics::getPositionIKHelper(moveit_msgs::GetPositionIK::Request &
     response.solution.joint_state.position.resize(dimension_);
     for(int i=0; i < dimension_; i++)
     {
-      response.solution.joint_state.position[i] = jnt_pos_out(i);
-      ROS_DEBUG("IK Solution: %s %d: %f",response.solution.joint_state.name[i].c_str(),i,jnt_pos_out(i));
+      response.solution.joint_state.position[i] = jnt_array[0](i);
+      ROS_DEBUG("IK Solution: %s %d: %f",response.solution.joint_state.name[i].c_str(),i,jnt_array[0](i));
     }
     response.error_code.val = response.error_code.SUCCESS;
     return true;
