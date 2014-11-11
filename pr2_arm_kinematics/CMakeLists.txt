@@ -14,15 +14,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include_directories(${EIGEN_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
  
-generate_messages(
-    #TODO DEPENDENCIES geometry_msgs std_msgs
-)
-
 catkin_package(
     DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib eigen moveit_core
     CATKIN_DEPENDS # TODO
     INCLUDE_DIRS include# TODO include
-    LIBRARIES # TODO
+    LIBRARIES pr2_arm_kinematics_lib# TODO
 )
 
 add_library(pr2_arm_kinematics_lib
