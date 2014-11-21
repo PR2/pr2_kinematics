@@ -2,8 +2,8 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.6 (2014-11-21)
+------------------
 * Removed mainpage.dox
 * Removed mainpage.dox
 * Contributors: TheDash, dash
