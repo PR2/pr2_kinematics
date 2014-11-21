@@ -2,6 +2,12 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Removed mainpage.dox
+* Removed mainpage.dox
+* Contributors: TheDash, dash
+
 1.0.5 (2014-11-18)
 ------------------
 * Added install target for pr2_kinematics_node to archive and lib dests
