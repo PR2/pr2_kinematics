@@ -2,8 +2,8 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.7 (2015-02-10)
+------------------
 * Fix pr2_arm_kinematics for indigo by adding cmake_modules
 * Add dependency to cmake_modules to solve Eigen depdency on indigo
 * Contributors: Ryohei Ueda
