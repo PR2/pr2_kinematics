@@ -2,7 +2,7 @@
   <name>pr2_arm_kinematics</name>
   <version>1.0.8</version>
   <description>This package provides a kinematics implementation for the PR2 robot. It can be used to compute forward and inverse kinematics.</description>
-  <maintainer email="dash@clearpathrobotics.com">Devon Ash</maintainer>
+  <maintainer email="ros-orphaned-packages@googlegroups.com">ROS Orphaned Package Maintainers</maintainer>
 
   <license>BSD</license>
 
