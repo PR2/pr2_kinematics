@@ -2,6 +2,22 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#10 <https://github.com/pr2/pr2_kinematics/issues/10>`_ from k-okada/use_pose
+  PoseMsgToKDL is deperecated use poseMsgToKDL
+* Merge pull request `#9 <https://github.com/pr2/pr2_kinematics/issues/9>`_ from k-okada/remove_get_solver_info2
+  remove GetKinematicsSolverInfo, whcih is deprecated in kinetic
+* Merge pull request `#8 <https://github.com/pr2/pr2_kinematics/issues/8>`_ from k-okada/add_c11
+  add c++11 option for error: ‘shared_ptr’ in namespace ‘std’ does not …
+* Merge pull request `#7 <https://github.com/pr2/pr2_kinematics/issues/7>`_ from k-okada/orp
+  change maintainer to ROS orphaned package maintainer
+* change maintainer to ROS orphaned package maintainer
+* PoseMsgToKDL is deperecated use poseMsgToKDL
+* remove GetKinematicsSolverInfo, whcih is deprecated in kinetic https://github.com/ros-planning/moveit_msgs/issues/3
+* add c++11 option for error: ‘shared_ptr’ in namespace ‘std’ does not name a template type typedef std::shared_ptr<Type> Name##Ptr; error
+* Contributors: Kei Okada
+
 1.0.7 (2015-02-10)
 ------------------
 * Fix pr2_arm_kinematics for indigo by adding cmake_modules

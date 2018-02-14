@@ -2,6 +2,13 @@
 Changelog for package pr2_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#11 <https://github.com/pr2/pr2_kinematics/issues/11>`_ from k-okada/orp2
+  change maintainer to ROS orphaned package maintainer
+* change maintainer to ROS orphaned package maintainer
+* Contributors: Kei Okada
+
 1.0.7 (2015-02-10)
 ------------------
 
