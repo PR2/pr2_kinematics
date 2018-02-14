@@ -173,7 +173,7 @@ bool PR2ArmKinematics::getPositionIKHelper(moveit_msgs::GetPositionIK::Request &
                                            moveit_msgs::GetPositionIK::Response &response)
 {
   KDL::Frame pose_desired;
-  tf::PoseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
+  tf::poseMsgToKDL(request.ik_request.pose_stamped.pose, pose_desired);
 
   //Do the IK
   KDL::JntArray jnt_pos_in;
@@ -260,7 +260,7 @@ bool PR2ArmKinematics::getPositionFK(moveit_msgs::GetPositionFK::Request &reques
     {
       tf_pose.frame_id_ = root_name_;
       tf_pose.stamp_ = ros::Time();
-      tf::PoseKDLToTF(p_out,tf_pose);
+      tf::poseKDLToTF(p_out,tf_pose);
       tf::poseStampedTFToMsg(tf_pose,pose);
       if(!transformPose(request.header.frame_id, pose, response.pose_stamped[i])) {
     response.error_code.val = response.error_code.FRAME_TRANSFORM_FAILURE;
