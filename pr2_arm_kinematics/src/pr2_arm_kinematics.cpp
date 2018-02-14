@@ -122,9 +122,6 @@ PR2ArmKinematics::PR2ArmKinematics(bool create_tf_listener):  node_handle_("~"),
     fk_service_ = node_handle_.advertiseService(FK_SERVICE,&PR2ArmKinematics::getPositionFK,this);
     ik_service_ = node_handle_.advertiseService(IK_SERVICE,&PR2ArmKinematics::getPositionIK,this);
 
-    ik_solver_info_service_ = node_handle_.advertiseService(IK_INFO_SERVICE,&PR2ArmKinematics::getIKSolverInfo,this);
-    fk_solver_info_service_ = node_handle_.advertiseService(FK_INFO_SERVICE,&PR2ArmKinematics::getFKSolverInfo,this);
-
   }
 }
 
@@ -225,30 +222,6 @@ bool PR2ArmKinematics::getPositionIKHelper(moveit_msgs::GetPositionIK::Request &
     ROS_DEBUG("An IK solution could not be found");
     return false;
   }
-}
-
-bool PR2ArmKinematics::getIKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
-                                       moveit_msgs::GetKinematicSolverInfo::Response &response)
-{
-  if (active_)
-  {
-    response.kinematic_solver_info = ik_solver_info_;
-    return true;
-  }
-  ROS_ERROR("IK node not active");
-  return false;
-}
-
-bool PR2ArmKinematics::getFKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
-                                       moveit_msgs::GetKinematicSolverInfo::Response &response)
-{
-  if(active_)
-  {
-    response.kinematic_solver_info = fk_solver_info_;
-    return true;
-  }
-  ROS_ERROR("IK node not active");
-  return false;
 }
 
 bool PR2ArmKinematics::getPositionFK(moveit_msgs::GetPositionFK::Request &request,
