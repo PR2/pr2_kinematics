@@ -4,8 +4,8 @@
   <version>1.0.8</version>
   <description>The pr2_kinematics package</description>
 
-  <maintainer email="dash@clearpathrobotics.com">Devon Ash</maintainer>
-  <license>TODO</license>
+  <maintainer email="ros-orphaned-packages@googlegroups.com">ROS Orphaned Package Maintainers</maintainer>
+  <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
