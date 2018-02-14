@@ -47,7 +47,7 @@
 
 #include <moveit_msgs/GetPositionFK.h>
 #include <moveit_msgs/GetPositionIK.h>
-#include <moveit_msgs/GetKinematicSolverInfo.h>
+#include <moveit_msgs/KinematicSolverInfo.h>
 #include <moveit_msgs/MoveItErrorCodes.h>
 
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -87,22 +87,6 @@ namespace pr2_arm_kinematics
      */
     virtual bool getPositionIK(moveit_msgs::GetPositionIK::Request &request,
                                moveit_msgs::GetPositionIK::Response &response);
-
-    /**
-     * @brief This is the basic kinematics info service that will return information about the kinematics node.
-     * @param A request message. See service definition for GetKinematicSolverInfo for more information on this message.
-     * @param The response message. See service definition for GetKinematicSolverInfo for more information on this message.
-     */
-    bool getIKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
-                         moveit_msgs::GetKinematicSolverInfo::Response &response);
-
-    /**
-     * @brief This is the basic kinematics info service that will return information about the kinematics node.
-     * @param A request message. See service definition for GetKinematicSolverInfo for more information on this message.
-     * @param The response message. See service definition for GetKinematicSolverInfo for more information on this message.
-     */
-    bool getFKSolverInfo(moveit_msgs::GetKinematicSolverInfo::Request &request,
-                         moveit_msgs::GetKinematicSolverInfo::Response &response);
 
     /**
      * @brief This is the basic forward kinematics service that will return information about the kinematics node.
