@@ -2,8 +2,8 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.9 (2018-02-14)
+------------------
 * Merge pull request `#10 <https://github.com/pr2/pr2_kinematics/issues/10>`_ from k-okada/use_pose
   PoseMsgToKDL is deperecated use poseMsgToKDL
 * Merge pull request `#9 <https://github.com/pr2/pr2_kinematics/issues/9>`_ from k-okada/remove_get_solver_info2
