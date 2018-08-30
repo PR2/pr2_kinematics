@@ -2,8 +2,8 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.10 (2018-08-30)
+-------------------
 * Merge pull request #12 from PR2/add_travis
   add travis.yml and fix for melodic
 * fix for kdl v1.4.0 (melodic), c.f. https://github.com/ros-planning/moveit/pull/906
