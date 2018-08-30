@@ -70,6 +70,8 @@ static const int TIMED_OUT = -2;
 
     ~PR2ArmIKSolver(){ delete pr2_arm_ik_; };
 
+    virtual void updateInternalDataStructures();
+
     /**
      * @brief The PR2 inverse kinematics solver
      */
