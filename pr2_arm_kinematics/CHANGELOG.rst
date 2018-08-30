@@ -2,6 +2,13 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request #12 from PR2/add_travis
+  add travis.yml and fix for melodic
+* fix for kdl v1.4.0 (melodic), c.f. https://github.com/ros-planning/moveit/pull/906
+* Contributors: Kei Okada
+
 1.0.9 (2018-02-14)
 ------------------
 * Merge pull request `#10 <https://github.com/pr2/pr2_kinematics/issues/10>`_ from k-okada/use_pose
