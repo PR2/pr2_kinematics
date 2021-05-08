@@ -2,8 +2,8 @@
 Changelog for package pr2_arm_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.11 (2021-05-08)
+-------------------
 * Merge pull request `#13 <https://github.com/PR2/pr2_kinematics/issues/13>`_ from k-okada/fix_plugin
 * fix kinematics_plugin settings
 * Contributors: Kei Okada
