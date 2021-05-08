@@ -35,7 +35,7 @@
 
 <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lpr2_arm_kinematics_lib" cflags="-I${prefix}/include"/>
-    <kinematics_base plugin="${prefix}/kinematics_plugins.xml"/>
+    <moveit_core plugin="${prefix}/kinematics_plugins.xml"/>
 </export>
 
 </package>
