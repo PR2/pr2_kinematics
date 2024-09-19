@@ -5,19 +5,19 @@ project(pr2_arm_kinematics)
 
 find_package(Boost REQUIRED thread)
 find_package(catkin REQUIRED COMPONENTS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs moveit_core pluginlib cmake_modules)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include_directories(${EIGEN_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
- 
+
 catkin_package(
-    DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib eigen moveit_kinematics
-    CATKIN_DEPENDS # TODO
-    INCLUDE_DIRS include# TODO include
-    LIBRARIES pr2_arm_kinematics_lib# TODO
+    DEPENDS EIGEN3
+    CATKIN_DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib moveit_kinematics
+    INCLUDE_DIRS include
+    LIBRARIES pr2_arm_kinematics_lib
 )
 
 add_library(pr2_arm_kinematics_lib
@@ -44,12 +44,12 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
-install(TARGETS pr2_arm_kinematics_lib 
+install(TARGETS pr2_arm_kinematics_lib
 ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(TARGETS pr2_arm_kinematics_node 
+install(TARGETS pr2_arm_kinematics_node
 ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
