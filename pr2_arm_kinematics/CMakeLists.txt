@@ -14,7 +14,7 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
  
 catkin_package(
-    DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib eigen moveit_core
+    DEPENDS roscpp angles tf_conversions urdf geometry_msgs kdl_parser moveit_msgs pluginlib eigen moveit_kinematics
     CATKIN_DEPENDS # TODO
     INCLUDE_DIRS include# TODO include
     LIBRARIES pr2_arm_kinematics_lib# TODO
